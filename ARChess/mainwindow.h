@@ -13,6 +13,8 @@
 #include <QVideoFrame>
 #include <QVideoWidget>
 #include <QCheckBox>
+#include <opencv2/opencv.hpp>
+#include "camera_controller.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -25,17 +27,14 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    QImage mat_to_qimage_ref(cv::Mat &mat, QImage::Format format);
 
 private slots:
     void on_camera_combbox_currentIndexChanged(int index);
-    void camera_captured_image(int id, const QImage &preview);
-    void camera_available_image(int id, const QVideoFrame  &frame);
-    void camera_image_expsed(int id);
-    void camera_ready_for_capture(bool ready);
-    void camera_state(QCamera::State state);
-    void camera_status(QCamera::Status status);
+    void receive_capture(QPixmap img);
 
-    void on_color_type_combbox_currentIndexChanged(int index);
+public slots:
+    void add_camerabox_item(QString item_name);
 
 private:
     Ui::MainWindow *ui;
@@ -48,6 +47,6 @@ private:
     QCamera *active_camera;
     QCameraImageCapture *imagecapture;
     QImage::Format format;
-    QCheckBox *running;
+    camera_controller *cam_control;
 };
 #endif // MAINWINDOW_H
