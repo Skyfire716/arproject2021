@@ -21,7 +21,8 @@ FORMS += \
 
 linux-g++ | linux-g++-64 | linux-g++-32 {
     INCLUDEPATH += /usr/local/include/opencv2
-    LIBS += -L/usr/local/lib -lopencv_calib3d -lopencv_core -lopencv_features2d -lopencv_flann  -lopencv_imgproc  -lopencv_ml -lopencv_objdetect  -lopencv_photo -lopencv_stitching -lopencv_superres -lopencv_video -lopencv_videostab
+    LIBS += -L/usr/local/lib -lopencv_core -lopencv_calib3d -lopencv_features2d -lopencv_flann  -lopencv_imgproc  -lopencv_ml -lopencv_objdetect  -lopencv_photo -lopencv_stitching -lopencv_superres -lopencv_video -lopencv_videostab -lopencv_imgcodecs -lopencv_videoio -lopencv_core -lopencv_dnn -lopencv_features2d -lopencv_flann -lopencv_gapi -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_shape -lopencv_stitching -lopencv_superres -lopencv_video -lopencv_videostab -lopencv_viz
+
 }
 
 win32 {

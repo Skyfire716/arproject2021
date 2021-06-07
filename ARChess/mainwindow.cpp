@@ -7,6 +7,9 @@
 #include <QPixmap>
 #include <QSize>
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/highgui.hpp>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -58,6 +61,15 @@ MainWindow::MainWindow(QWidget *parent)
         camera_box->addItem(cameraInfo.deviceName());
         camera_select_map.insert(camera_box->count(), cameraInfo.deviceName());
     }
+    cv::VideoCapture camera(0);
+    if(!camera.isOpened()){
+       qDebug() << "Kann Kamera nicht öffnen";
+    }
+    std::string lol = "Test";
+    cv::namedWindow(lol, cv::WINDOW_AUTOSIZE);
+    cv::Mat test_frame;
+    camera >> test_frame;
+    cv::imshow("Test", test_frame);
 }
 
 MainWindow::~MainWindow()
@@ -70,6 +82,7 @@ void MainWindow::on_camera_combbox_currentIndexChanged(int index)
 {
     qDebug() << index << " selected";
     qDebug() << cameras[index].deviceName();
+    /*
     active_camera = new QCamera(cameras[index]);
     active_camera->load();
 
@@ -81,7 +94,7 @@ void MainWindow::on_camera_combbox_currentIndexChanged(int index)
         qDebug() << "Supported Size " << size.width() << " x " << size.height();
     }
     active_camera->setCaptureMode(QCamera::CaptureMode::CaptureViewfinder);
-
+*/
 
  }
 
@@ -118,6 +131,7 @@ void MainWindow::camera_available_image(int id, const QVideoFrame &frame)
         qDebug() << "Cvt Color";
         cv::cvtColor(frameMat, bgrframegray, cv::COLOR_YUV2BGR_UYVY, 3);
         cv::threshold(bgrframegray, bgrframe, 70, 255, 3);
+        cv::imwrite("/home/jonas/Desktop/Test.png", bgrframe);
         //cv::adaptiveThreshold(bg)
         cv::Mat gray = cv::Mat(frame.size().width(), frame.size().height(), CV_8UC3);
         qDebug() << "Create QImg";
