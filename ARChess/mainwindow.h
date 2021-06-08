@@ -33,6 +33,8 @@ private slots:
     void on_camera_combbox_currentIndexChanged(int index);
     void receive_capture(QPixmap img);
 
+    void on_pushButton_clicked();
+
 public slots:
     void add_camerabox_item(QString item_name);
 

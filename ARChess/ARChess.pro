@@ -1,4 +1,4 @@
-QT       += core gui multimedia multimediawidgets
+QT       += core gui multimedia multimediawidgets androidextras
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -27,10 +27,14 @@ contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
         $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_imgproc.so \
         $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_dnn.so \
         $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_videoio.so \
-        $$PWD/3rdparty/install/lib/armeabi-v7a/libtbb.so
+        $$PWD/3rdparty/install/lib/armeabi-v7a/libtbb.so \
+        $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_imgcodecs.so
     INCLUDEPATH = $$PWD/3rdparty/install/sdk/native/jni/include
     # Order might be important it seems, linker in older droids (4.2) are dumb
-    LIBS += -L$$PWD/3rdparty/install/lib/armeabi-v7a/ -ltbb -lopencv_core -lopencv_imgproc -lopencv_dnn -lopencv_videoio
+    LIBS += -L$$PWD/3rdparty/install/lib/armeabi-v7a/ -ltbb -lopencv_core -lopencv_imgproc -lopencv_dnn -lopencv_videoio -lopencv_imgcodecs
+
+    ANDROID_PACKAGE_SOURCE_DIR = \
+        $$PWD/org.arproject.archess
 }
 
 linux-g++ | linux-g++-64 | linux-g++-32 {
@@ -66,3 +70,13 @@ win32 {
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    org.arproject.archess/AndroidManifest.xml \
+    org.arproject.archess/build.gradle \
+    org.arproject.archess/gradle/wrapper/gradle-wrapper.jar \
+    org.arproject.archess/gradle/wrapper/gradle-wrapper.properties \
+    org.arproject.archess/gradlew \
+    org.arproject.archess/gradlew.bat \
+    org.arproject.archess/res/values/libs.xml
+

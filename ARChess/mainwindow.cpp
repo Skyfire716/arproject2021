@@ -62,3 +62,9 @@ void MainWindow::receive_capture(QPixmap img)
     image_plane->update();
 }
 
+
+void MainWindow::on_pushButton_clicked()
+{
+    cam_control->init();
+}
+
