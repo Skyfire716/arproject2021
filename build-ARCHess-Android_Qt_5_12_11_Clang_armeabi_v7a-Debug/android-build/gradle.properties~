@@ -1,0 +1,4 @@
+androidBuildToolsVersion=31.0.0-rc4
+androidCompileSdkVersion=30
+buildDir=build
+qt5AndroidDir=/home/jonas/QtArProject/5.12.11/android_armv7/src/android/java

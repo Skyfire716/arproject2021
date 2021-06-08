@@ -10,18 +10,50 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    camera_controller.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    camera_controller.h \
     mainwindow.h
 
 FORMS += \
     mainwindow.ui
 
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_EXTRA_LIBS = \
+        $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_core.so \
+        $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_imgproc.so \
+        $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_dnn.so \
+        $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_videoio.so \
+        $$PWD/3rdparty/install/lib/armeabi-v7a/libtbb.so
+    INCLUDEPATH = $$PWD/3rdparty/install/sdk/native/jni/include
+    # Order might be important it seems, linker in older droids (4.2) are dumb
+    LIBS += -L$$PWD/3rdparty/install/lib/armeabi-v7a/ -ltbb -lopencv_core -lopencv_imgproc -lopencv_dnn -lopencv_videoio
+}
+
 linux-g++ | linux-g++-64 | linux-g++-32 {
-    INCLUDEPATH += /usr/local/include/opencv2
-    LIBS += -L/usr/local/lib -lopencv_core -lopencv_calib3d -lopencv_features2d -lopencv_flann  -lopencv_imgproc  -lopencv_ml -lopencv_objdetect  -lopencv_photo -lopencv_stitching -lopencv_superres -lopencv_video -lopencv_videostab -lopencv_imgcodecs -lopencv_videoio -lopencv_core -lopencv_dnn -lopencv_features2d -lopencv_flann -lopencv_gapi -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_shape -lopencv_stitching -lopencv_superres -lopencv_video -lopencv_videostab -lopencv_viz
+    INCLUDEPATH += -I/usr/local/include/opencv2
+    LIBS += -L/usr/local/lib \
+            -lopencv_calib3d \
+            -lopencv_core \
+            -lopencv_dnn \
+            -lopencv_features2d \
+            -lopencv_flann \
+            -lopencv_highgui \
+            -lopencv_imgcodecs \
+            -lopencv_imgproc \
+            -lopencv_ml \
+            -lopencv_objdetect \
+            -lopencv_photo \
+            -lopencv_shape \
+            -lopencv_stitching \
+            -lopencv_superres \
+            -lopencv_videoio \
+            -lopencv_video \
+            -lopencv_videostab \
+            -lopencv_viz
 
 }
 
