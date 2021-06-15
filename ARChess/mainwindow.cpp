@@ -22,7 +22,6 @@ MainWindow::MainWindow(QWidget *parent)
     camera_box = ui->camera_combbox;
     image_plane = ui->image_label;
     threshold_method_box = ui->threshold_method_ui;
-    scene_3d = ui->openGLWidget3D;
     threshold_slider = ui->threshold_slider_id;
     QString version_text;
     version_text = "OpenCV: ";
@@ -44,7 +43,6 @@ MainWindow::MainWindow(QWidget *parent)
     threshold_method_box->setCurrentIndex(0);
     cam_control->worker->change_threshold_method(0);
     cam_control->worker->change_threshold(threshold_slider->value());
-    //scene_3d->
 }
 
 MainWindow::~MainWindow()

@@ -77,11 +77,8 @@ void camera_worker::run()
             switch_camera_b = false;
             if(new_cv_index == -1){
                 qDebug() << "Load from File";
-#ifdef Q_OS_LINUX
-                cv_camera.open("../resources/videos/VID_20210603_121318.mp4");
-#else
-                //TODO Add your path to the camera here
-#endif
+                //TODO Check here if you get an error on non linux systems
+                cv_camera.open(":/videos/resources/videos/VID_20210603_121318.mp4");
             }else{
                 cv_camera.open(new_cv_index);
             }

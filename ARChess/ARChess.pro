@@ -11,11 +11,13 @@ CONFIG += c++11
 
 SOURCES += \
     camera_controller.cpp \
+    chessglwidget.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     camera_controller.h \
+    chessglwidget.h \
     mainwindow.h
 
 FORMS += \
@@ -80,4 +82,8 @@ DISTFILES += \
     org.arproject.archess/gradlew \
     org.arproject.archess/gradlew.bat \
     org.arproject.archess/res/values/libs.xml
+
+RESOURCES += \
+    resource_manager.qrc
+
 
