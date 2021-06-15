@@ -21,10 +21,12 @@ MainWindow::MainWindow(QWidget *parent)
     openvc_version = ui->openvc_version_label;
     camera_box = ui->camera_combbox;
     image_plane = ui->image_label;
+    scene_3d = ui->openGLWidget3D;
     QString version_text;
     version_text = "OpenCV: ";
     version_text.append(CV_VERSION);
     openvc_version->setText(version_text);
+    camera_box->addItem(EXAMPLE_VIDEO);
     cam_control = new  camera_controller();
     qDebug() << "init";
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
@@ -32,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();
+    //scene_3d->
 }
 
 MainWindow::~MainWindow()
@@ -52,7 +55,12 @@ void MainWindow::on_camera_combbox_currentIndexChanged(int index)
     image_plane->setText("Loading other Camera...");
     QString cam_name = camera_box->itemText(index);
     qDebug() << "Change Camera to " << index << " " << cam_name;
-    int cv_index = cam_name.remove("Camera ", Qt::CaseInsensitive).toInt();
+    int cv_index = 0;
+    if(cam_name.contains(EXAMPLE_VIDEO)){
+        cv_index = -1;
+    }else{
+        cv_index = cam_name.remove("Camera ", Qt::CaseInsensitive).toInt();
+    }
     cam_control->worker->change_camera(cv_index);
 }
 

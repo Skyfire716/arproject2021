@@ -15,6 +15,7 @@
 #include <QCheckBox>
 #include <opencv2/opencv.hpp>
 #include "camera_controller.h"
+#include <QOpenGLWidget>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -23,6 +24,8 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+
+const QString EXAMPLE_VIDEO = "Video";
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -50,5 +53,6 @@ private:
     QCameraImageCapture *imagecapture;
     QImage::Format format;
     camera_controller *cam_control;
+    QOpenGLWidget *scene_3d;
 };
 #endif // MAINWINDOW_H

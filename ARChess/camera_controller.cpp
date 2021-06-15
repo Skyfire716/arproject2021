@@ -59,7 +59,12 @@ void camera_worker::run()
         }
         if(switch_camera_b){
             switch_camera_b = false;
-            cv_camera.open(new_cv_index);
+            if(new_cv_index == -1){
+                qDebug() << "Load from File";
+                //cv_camera.open("");
+            }else{
+                //cv_camera.open(new_cv_index);
+            }
         }
         if(capture_b && cv_camera.isOpened()){
             cv_camera >> camera_image;
