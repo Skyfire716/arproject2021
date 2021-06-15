@@ -9,22 +9,33 @@
 #include<QImage>
 #include <QPixmap>
 #include <QDebug>
+#include <QVector>
+#include <cstdio>
 
 class camera_worker : public QObject
 {
     Q_OBJECT
     QThread worker_thread;
+    typedef std::vector<cv::Point> contour_t;
+    typedef std::vector<contour_t> contour_vector_t;
 
 public:
     volatile bool init_b;
     volatile bool capture_b;
     volatile bool switch_camera_b;
+    volatile bool threshold_change_b;
+    volatile bool threshold_method_b;
     volatile int new_cv_index;
+    volatile int threshold_value_shared;
+    volatile int thresold_method_shared;
+
     bool running;
 
 public slots:
     void capture_video();
     void change_camera(int cv_index);
+    void change_threshold(int thresold);
+    void change_threshold_method(int threshold_method);
     void run();
 
 signals:
@@ -33,8 +44,13 @@ signals:
     void camera_detected(QString cam_name);
 
 private:
+    int threshold_value;
+    int threshold_method;
     QImage *camera_image_ref;
     cv::Mat camera_image;
+    cv::Mat gray_image;
+    cv::Mat threshold_image;
+    cv::Mat *result_image;
     void initialize_camera();
     QList<int> cv_cameras;
     cv::VideoCapture cv_camera;
