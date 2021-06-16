@@ -18,6 +18,7 @@
 #include <QSlider>
 #include "camera_controller.h"
 #include "chessglwidget.h"
+#include "testwidget3d.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -58,5 +59,6 @@ private:
     QImage::Format format;
     camera_controller *cam_control;
     chessglwidget *opengl_scene;
+    testwidget3d *test3dscene;
 };
 #endif // MAINWINDOW_H

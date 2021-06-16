@@ -105,6 +105,9 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="testwidget3d" name="widget3d" native="true"/>
+      </item>
      </layout>
     </item>
    </layout>
@@ -115,6 +118,12 @@
    <class>chessglwidget</class>
    <extends>QOpenGLWidget</extends>
    <header location="global">chessglwidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>testwidget3d</class>
+   <extends>QWidget</extends>
+   <header location="global">testwidget3d.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

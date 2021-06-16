@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     threshold_method_box = ui->threshold_method_ui;
     threshold_slider = ui->threshold_slider_id;
     opengl_scene = ui->openGLWidget;
+    test3dscene = ui->widget3d;
     QString version_text;
     version_text = "OpenCV: ";
     version_text.append(CV_VERSION);

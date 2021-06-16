@@ -12,13 +12,17 @@ CONFIG += c++11 resources_big
 SOURCES += \
     camera_controller.cpp \
     chessglwidget.cpp \
+    flippedtextureimage.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    testwidget3d.cpp
 
 HEADERS += \
     camera_controller.h \
     chessglwidget.h \
-    mainwindow.h
+    flippedtextureimage.h \
+    mainwindow.h \
+    testwidget3d.h
 
 FORMS += \
     mainwindow.ui

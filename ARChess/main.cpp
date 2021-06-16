@@ -5,11 +5,12 @@
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender>
 #include <Qt3DExtras>
+#include "flippedtextureimage.h"
 #if Q_OS_ANDROID
 #include <QtAndroid>
 #endif
 
-Qt3DCore::QEntity *createScene()
+Qt3DCore::QEntity *createScene(QRect geormetry)
 {
     Qt3DCore::QEntity *rootEntity = new Qt3DCore::QEntity;
     Qt3DRender::QMaterial *material = new Qt3DExtras::QPhongMaterial(rootEntity);
@@ -53,7 +54,6 @@ Qt3DCore::QEntity *createScene()
     Qt3DCore::QEntity *monkeyEntity = new Qt3DCore::QEntity(rootEntity);
     Qt3DRender::QMesh *monkeyMesh = new Qt3DRender::QMesh();
     monkeyMesh->setSource(QUrl("qrc:/models/resources/models/blender_monkey.stl"));
-    qDebug() << "Status " << monkeyMesh->status();
 
     Qt3DCore::QTransform *monkeyTransform = new Qt3DCore::QTransform;
     monkeyTransform->setScale3D(QVector3D(1, 1, 1));
@@ -61,15 +61,37 @@ Qt3DCore::QEntity *createScene()
     monkeyEntity->addComponent(monkeyMesh);
     monkeyEntity->addComponent(monkeyTransform);
     monkeyEntity->addComponent(material);
+
+
+    Qt3DCore::QEntity *planeEntity = new Qt3DCore::QEntity(rootEntity);
+       Qt3DExtras::QPlaneMesh *planeMesh = new Qt3DExtras::QPlaneMesh(planeEntity);
+       planeMesh->setHeight(2);
+       planeMesh->setWidth(2);
+
+       Qt3DExtras::QTextureMaterial *planeMaterial = new Qt3DExtras::QTextureMaterial(planeEntity);
+       Qt3DRender::QTexture2D *planeTexture = new Qt3DRender::QTexture2D(planeMaterial);
+       FlippedTextureImage *planeTextureImage = new FlippedTextureImage(planeTexture);
+       planeTextureImage->setSize(geormetry.size());
+       planeTexture->addTextureImage(planeTextureImage);
+       planeMaterial->setTexture(planeTexture);
+
+       Qt3DCore::QTransform *planeTransform = new Qt3DCore::QTransform(planeEntity);
+       planeTransform->setRotationX(90);
+       planeTransform->setTranslation(QVector3D(0, 0, 0));
+
+       planeEntity->addComponent(planeMesh);
+       planeEntity->addComponent(planeMaterial);
+       planeEntity->addComponent(planeTransform);
+
     return rootEntity;
 }
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    //MainWindow w;
+    MainWindow w;
     Qt3DExtras::Qt3DWindow view;
-    Qt3DCore::QEntity *scene = createScene();
+    Qt3DCore::QEntity *scene = createScene(view.geometry());
     // Camera
     Qt3DRender::QCamera *camera = view.camera();
     camera->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.1f, 1000.0f);
@@ -94,6 +116,6 @@ int main(int argc, char *argv[])
         }
     }
 #endif
-    //w.show();
+    w.show();
     return a.exec();
 }

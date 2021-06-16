@@ -134,7 +134,7 @@ void camera_worker::run()
             }
             QImage img((uchar*)result_image->data, result_image->cols, result_image->rows, result_image->step, QImage::Format_RGB888);
             if (!img.isNull()){
-                //emit image_ready(QPixmap::fromImage(img));
+                emit image_ready(QPixmap::fromImage(img));
                 //cv::flip(*result_image, *result_image, -1);
                 emit image_ready(result_image->data, result_image->cols, result_image->rows);
             }
