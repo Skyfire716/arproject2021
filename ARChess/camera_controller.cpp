@@ -3,6 +3,7 @@
 #include <QPixmap>
 #include <opencv2/opencv.hpp>
 #include <QString>
+#include <QTemporaryDir>
 
 void camera_worker::capture_video()
 {
@@ -25,18 +26,14 @@ void camera_worker::initialize_camera()
     qDebug() << "Is open= " << temp_cam.isOpened();
 #endif
     do{
-        qDebug() << "Scan cam";
         temp_cam.open(camera_index);
-        qDebug() << "Scan cam1";
         found_cam = temp_cam.isOpened();
-        qDebug() << "Scan cam2";
         if(found_cam){
             qDebug() << "Backend " << QString::fromStdString(temp_cam.getBackendName());
             QString item_str;
             item_str = "Camera ";
             item_str.append(QString::number(camera_index));
             cv_cameras.append(camera_index);
-            qDebug() << "Scan cam3";
             emit camera_detected(item_str);
             qDebug() << "Found Camera " << camera_index;
         }
@@ -78,7 +75,13 @@ void camera_worker::run()
             if(new_cv_index == -1){
                 qDebug() << "Load from File";
                 //TODO Check here if you get an error on non linux systems
-                cv_camera.open(":/videos/resources/videos/VID_20210603_121318.mp4");
+                QTemporaryDir tempDir;
+                if(tempDir.isValid()){
+                    const QString tempFile = tempDir.path() +  "/archess.mp4";
+                    if(QFile::copy(":/videos/resources/videos/VID_20210603_121318.mp4", tempFile)){
+                        cv_camera.open(tempFile.toStdString());
+                    }
+                }
             }else{
                 cv_camera.open(new_cv_index);
             }
@@ -120,7 +123,7 @@ void camera_worker::run()
                 cv::Rect r = cv::boundingRect(approx_contour);
                 cv::rectangle(camera_image, r, cv::Scalar(0, 0, 255), 4);
             }
-            qDebug() << "Contours " << contours.size();
+            //qDebug() << "Contours " << contours.size();
             //Change the Pointer to result Image if you want to see another output mat
             result_image = &camera_image;
             if(result_image->channels() == 1){
@@ -130,7 +133,9 @@ void camera_worker::run()
             }
             QImage img((uchar*)result_image->data, result_image->cols, result_image->rows, result_image->step, QImage::Format_RGB888);
             if (!img.isNull()){
-                emit image_ready(QPixmap::fromImage(img));
+                //emit image_ready(QPixmap::fromImage(img));
+                //cv::flip(*result_image, *result_image, -1);
+                emit image_ready(result_image->data, result_image->cols, result_image->rows);
             }
         }
     }

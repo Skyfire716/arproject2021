@@ -14,9 +14,10 @@
 #include <QVideoWidget>
 #include <QCheckBox>
 #include <opencv2/opencv.hpp>
-#include "camera_controller.h"
 #include <QOpenGLWidget>
 #include <QSlider>
+#include "camera_controller.h"
+#include "chessglwidget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -56,6 +57,6 @@ private:
     QCameraImageCapture *imagecapture;
     QImage::Format format;
     camera_controller *cam_control;
-    QOpenGLWidget *scene_3d;
+    chessglwidget *opengl_scene;
 };
 #endif // MAINWINDOW_H

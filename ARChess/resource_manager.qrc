@@ -64,4 +64,7 @@
         <file>resources/images/IMG_20210603_121238_1.jpg</file>
         <file>resources/images/IMG_20210603_121238.jpg</file>
     </qresource>
+    <qresource prefix="/models">
+        <file>resources/models/blender_monkey.obj</file>
+    </qresource>
 </RCC>

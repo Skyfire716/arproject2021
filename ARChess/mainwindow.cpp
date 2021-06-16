@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
     image_plane = ui->image_label;
     threshold_method_box = ui->threshold_method_ui;
     threshold_slider = ui->threshold_slider_id;
+    opengl_scene = ui->openGLWidget;
     QString version_text;
     version_text = "OpenCV: ";
     version_text.append(CV_VERSION);
@@ -30,7 +31,8 @@ MainWindow::MainWindow(QWidget *parent)
     cam_control = new  camera_controller();
     qDebug() << "init";
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
-    connect(cam_control->worker, &camera_worker::image_ready, this, &MainWindow::receive_capture);
+    connect(cam_control->worker, static_cast<void (camera_worker::*)(QPixmap)>(&camera_worker::image_ready), this, &MainWindow::receive_capture);
+    connect(cam_control->worker, static_cast<void (camera_worker::*)(unsigned char*, int ,int)>(&camera_worker::image_ready), opengl_scene, &chessglwidget::receive_capture);
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();

@@ -40,6 +40,7 @@ public slots:
 
 signals:
     void image_ready(QPixmap img);
+    void image_ready(unsigned char* image, int width, int height);
     void finished();
     void camera_detected(QString cam_name);
 

@@ -1,4 +1,4 @@
-QT       += core gui multimedia multimediawidgets
+QT       += core gui multimedia multimediawidgets 3dcore 3drender 3dinput 3dlogic 3dextras 3danimation
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
