@@ -79,6 +79,7 @@ void camera_worker::run()
                 if(tempDir.isValid()){
                     const QString tempFile = tempDir.path() +  "/archess.mp4";
                     if(QFile::copy(":/videos/resources/videos/VID_20210603_121318.mp4", tempFile)){
+                        qDebug() << "Mp4 " << tempFile;
                         cv_camera.open(tempFile.toStdString());
                     }
                 }

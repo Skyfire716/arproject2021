@@ -84,6 +84,6 @@ DISTFILES += \
     org.arproject.archess/res/values/libs.xml
 
 RESOURCES += \
-    resource_manager.qrc
+    qtresourcemanager.qrc
 
 
