@@ -53,6 +53,7 @@ Qt3DCore::QEntity *createScene()
     Qt3DCore::QEntity *monkeyEntity = new Qt3DCore::QEntity(rootEntity);
     Qt3DRender::QMesh *monkeyMesh = new Qt3DRender::QMesh();
     monkeyMesh->setSource(QUrl("qrc:/models/resources/models/blender_monkey.stl"));
+    qDebug() << "Status " << monkeyMesh->status();
 
     Qt3DCore::QTransform *monkeyTransform = new Qt3DCore::QTransform;
     monkeyTransform->setScale3D(QVector3D(1, 1, 1));

@@ -2,7 +2,7 @@ QT       += core gui multimedia multimediawidgets 3dcore 3drender 3dinput 3dlogi
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++11 resources_big
 
 
 # You can make your code fail to compile if it uses deprecated APIs.
