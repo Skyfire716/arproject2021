@@ -12,6 +12,7 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 #include "camera_controller.h"
+#include "flippedtextureimage.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -34,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
     connect(cam_control->worker, static_cast<void (camera_worker::*)(QPixmap)>(&camera_worker::image_ready), this, &MainWindow::receive_capture);
     connect(cam_control->worker, static_cast<void (camera_worker::*)(unsigned char*, int ,int)>(&camera_worker::image_ready), opengl_scene, &chessglwidget::receive_capture);
+    connect(cam_control->worker, static_cast<void (camera_worker::*)(QImage)>(&camera_worker::image_ready), test3dscene->planeTextureImage, &FlippedTextureImage::receive_capture);
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();

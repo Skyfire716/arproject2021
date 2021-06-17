@@ -22,6 +22,8 @@
 
 testwidget3d::testwidget3d(QWidget *parent) : QWidget(parent)
 {
+    this->setGeometry(0, 0, 500, 500);
+    qDebug() << "Geometry " << this->geometry();
     m_3d_window = new Qt3DExtras::Qt3DWindow();
     m_3d_window->setGeometry(this->geometry());
     QRect rect = m_3d_window->geometry();
@@ -78,7 +80,7 @@ testwidget3d::testwidget3d(QWidget *parent) : QWidget(parent)
 
     Qt3DExtras::QTextureMaterial *planeMaterial = new Qt3DExtras::QTextureMaterial(planeEntity);
     Qt3DRender::QTexture2D *planeTexture = new Qt3DRender::QTexture2D(planeMaterial);
-    FlippedTextureImage *planeTextureImage = new FlippedTextureImage(planeTexture);
+    planeTextureImage = new FlippedTextureImage(planeTexture);
     planeTextureImage->setSize(QSize(this->geometry().width(), this->geometry().height()));
     planeTexture->addTextureImage(planeTextureImage);
     planeMaterial->setTexture(planeTexture);
@@ -111,4 +113,12 @@ testwidget3d::testwidget3d(QWidget *parent) : QWidget(parent)
     m_3d_window_container->setGeometry(this->geometry());
     m_3d_window_container->setParent(this);
     planeTextureImage->update();
+    this->update();
+
+    timer.setInterval(20);
+    connect(&timer, &QTimer::timeout, [torusTransform]() {
+        torusTransform->setRotationX(torusTransform->rotationX() + 1.5f);
+     });
+    timer.start();
+
 }

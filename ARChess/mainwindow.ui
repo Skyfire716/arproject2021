@@ -89,7 +89,7 @@
       <item>
        <widget class="QLabel" name="image_label">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -106,7 +106,20 @@
        </widget>
       </item>
       <item>
-       <widget class="testwidget3d" name="widget3d" native="true"/>
+       <widget class="testwidget3d" name="widget3d" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>500</width>
+          <height>500</height>
+         </size>
+        </property>
+        <property name="baseSize">
+         <size>
+          <width>680</width>
+          <height>480</height>
+         </size>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
