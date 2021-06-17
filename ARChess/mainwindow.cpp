@@ -12,7 +12,6 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 #include "camera_controller.h"
-#include "flippedtextureimage.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -21,11 +20,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     openvc_version = ui->openvc_version_label;
     camera_box = ui->camera_combbox;
-    image_plane = ui->image_label;
     threshold_method_box = ui->threshold_method_ui;
     threshold_slider = ui->threshold_slider_id;
-    opengl_scene = ui->openGLWidget;
-    test3dscene = ui->widget3d;
+    arwidget = ui->widget3d;
     QString version_text;
     version_text = "OpenCV: ";
     version_text.append(CV_VERSION);
@@ -33,9 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
     cam_control = new  camera_controller();
     qDebug() << "init";
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
-    connect(cam_control->worker, static_cast<void (camera_worker::*)(QPixmap)>(&camera_worker::image_ready), this, &MainWindow::receive_capture);
-    connect(cam_control->worker, static_cast<void (camera_worker::*)(unsigned char*, int ,int)>(&camera_worker::image_ready), opengl_scene, &chessglwidget::receive_capture);
-    connect(cam_control->worker, static_cast<void (camera_worker::*)(QImage)>(&camera_worker::image_ready), test3dscene->planeTextureImage, &FlippedTextureImage::receive_capture);
+    connect(cam_control->worker, static_cast<void (camera_worker::*)(QPixmap)>(&camera_worker::image_ready), arwidget->planeTextureImage, &archessbackgound::receive_image);
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();
@@ -65,7 +60,6 @@ void MainWindow::add_camerabox_item(QString item_name){
 
 void MainWindow::on_camera_combbox_currentIndexChanged(int index)
 {
-    image_plane->setText("Loading other Camera...");
     QString cam_name = camera_box->itemText(index);
     qDebug() << "Change Camera to " << index << " " << cam_name;
     int cv_index = 0;
@@ -75,12 +69,6 @@ void MainWindow::on_camera_combbox_currentIndexChanged(int index)
         cv_index = cam_name.remove("Camera ", Qt::CaseInsensitive).toInt();
     }
     cam_control->worker->change_camera(cv_index);
-}
-
-void MainWindow::receive_capture(QPixmap img)
-{
-    image_plane->setPixmap(img.scaled(1024, 740, Qt::KeepAspectRatio));
-    image_plane->update();
 }
 
 

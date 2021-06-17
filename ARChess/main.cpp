@@ -5,7 +5,6 @@
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender>
 #include <Qt3DExtras>
-#include "flippedtextureimage.h"
 #if Q_OS_ANDROID
 #include <QtAndroid>
 #endif
@@ -61,27 +60,6 @@ Qt3DCore::QEntity *createScene(QRect geormetry)
     monkeyEntity->addComponent(monkeyMesh);
     monkeyEntity->addComponent(monkeyTransform);
     monkeyEntity->addComponent(material);
-
-
-    Qt3DCore::QEntity *planeEntity = new Qt3DCore::QEntity(rootEntity);
-       Qt3DExtras::QPlaneMesh *planeMesh = new Qt3DExtras::QPlaneMesh(planeEntity);
-       planeMesh->setHeight(2);
-       planeMesh->setWidth(2);
-
-       Qt3DExtras::QTextureMaterial *planeMaterial = new Qt3DExtras::QTextureMaterial(planeEntity);
-       Qt3DRender::QTexture2D *planeTexture = new Qt3DRender::QTexture2D(planeMaterial);
-       FlippedTextureImage *planeTextureImage = new FlippedTextureImage(planeTexture);
-       planeTextureImage->setSize(geormetry.size());
-       planeTexture->addTextureImage(planeTextureImage);
-       planeMaterial->setTexture(planeTexture);
-
-       Qt3DCore::QTransform *planeTransform = new Qt3DCore::QTransform(planeEntity);
-       planeTransform->setRotationX(90);
-       planeTransform->setTranslation(QVector3D(0, 0, 0));
-
-       planeEntity->addComponent(planeMesh);
-       planeEntity->addComponent(planeMaterial);
-       planeEntity->addComponent(planeTransform);
 
     return rootEntity;
 }

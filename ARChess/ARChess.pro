@@ -10,19 +10,15 @@ CONFIG += c++11 resources_big
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    archesswidget.cpp \
     camera_controller.cpp \
-    chessglwidget.cpp \
-    flippedtextureimage.cpp \
     main.cpp \
-    mainwindow.cpp \
-    testwidget3d.cpp
+    mainwindow.cpp
 
 HEADERS += \
+    archesswidget.h \
     camera_controller.h \
-    chessglwidget.h \
-    flippedtextureimage.h \
-    mainwindow.h \
-    testwidget3d.h
+    mainwindow.h
 
 FORMS += \
     mainwindow.ui

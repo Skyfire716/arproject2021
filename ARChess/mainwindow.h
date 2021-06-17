@@ -17,8 +17,7 @@
 #include <QOpenGLWidget>
 #include <QSlider>
 #include "camera_controller.h"
-#include "chessglwidget.h"
-#include "testwidget3d.h"
+#include "archesswidget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -37,7 +36,6 @@ public:
 
 private slots:
     void on_camera_combbox_currentIndexChanged(int index);
-    void receive_capture(QPixmap img);
     void on_pushButton_clicked();
     void on_threshold_slider_id_valueChanged(int value);
     void on_threshold_method_ui_currentIndexChanged(int index);
@@ -48,7 +46,6 @@ public slots:
 private:
     Ui::MainWindow *ui;
     QLabel *openvc_version;
-    QLabel *image_plane;
     QComboBox *camera_box;
     QComboBox *threshold_method_box;
     QSlider *threshold_slider;
@@ -58,7 +55,7 @@ private:
     QCameraImageCapture *imagecapture;
     QImage::Format format;
     camera_controller *cam_control;
-    chessglwidget *opengl_scene;
-    testwidget3d *test3dscene;
+    archesswidget *arwidget;
+
 };
 #endif // MAINWINDOW_H

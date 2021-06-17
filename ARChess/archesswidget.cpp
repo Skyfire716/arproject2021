@@ -1,6 +1,4 @@
-#include "testwidget3d.h"
-#include "flippedtextureimage.h"
-
+#include "archesswidget.h"
 #include <Qt3DExtras/QTorusMesh>
 #include <Qt3DExtras/QPlaneMesh>
 #include <Qt3DExtras/QPhongMaterial>
@@ -8,6 +6,7 @@
 #include <Qt3DRender/QCamera>
 #include <Qt3DCore/QTransform>
 #include <QLabel>
+#include <Qt3DRender>
 #include <Qt3DRender/QLayerFilter>
 #include <Qt3DRender/QFrameGraphNode>
 #include <Qt3DRender/QViewport>
@@ -20,9 +19,8 @@
 #include <Qt3DRender/QRenderSettings>
 #include <QPropertyAnimation>
 
-testwidget3d::testwidget3d(QWidget *parent) : QWidget(parent)
+archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
 {
-    this->setGeometry(0, 0, 500, 500);
     qDebug() << "Geometry " << this->geometry();
     m_3d_window = new Qt3DExtras::Qt3DWindow();
     m_3d_window->setGeometry(this->geometry());
@@ -80,8 +78,8 @@ testwidget3d::testwidget3d(QWidget *parent) : QWidget(parent)
 
     Qt3DExtras::QTextureMaterial *planeMaterial = new Qt3DExtras::QTextureMaterial(planeEntity);
     Qt3DRender::QTexture2D *planeTexture = new Qt3DRender::QTexture2D(planeMaterial);
-    planeTextureImage = new FlippedTextureImage(planeTexture);
-    planeTextureImage->setSize(QSize(this->geometry().width(), this->geometry().height()));
+    planeTextureImage = new archessbackgound(planeTexture);
+    planeTextureImage->setSize(this->geometry().size());
     planeTexture->addTextureImage(planeTextureImage);
     planeMaterial->setTexture(planeTexture);
 
@@ -114,11 +112,21 @@ testwidget3d::testwidget3d(QWidget *parent) : QWidget(parent)
     m_3d_window_container->setParent(this);
     planeTextureImage->update();
     this->update();
+}
 
-    timer.setInterval(20);
-    connect(&timer, &QTimer::timeout, [torusTransform]() {
-        torusTransform->setRotationX(torusTransform->rotationX() + 1.5f);
-     });
-    timer.start();
+archessbackgound::archessbackgound(Qt3DCore::QNode *parent) : Qt3DRender::QPaintedTextureImage(parent)
+{
 
+}
+
+void archessbackgound::paint(QPainter *painter)
+{
+    painter->drawPixmap(0, 0, background.scaled(1024, 740, Qt::KeepAspectRatio));
+}
+
+void archessbackgound::receive_image(QPixmap img)
+{
+    this->background = img;
+    //this->setSize(img.size());
+    this->update();
 }

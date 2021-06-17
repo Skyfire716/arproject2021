@@ -77,36 +77,13 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="chessglwidget" name="openGLWidget">
+       <widget class="archesswidget" name="widget3d" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="image_label">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="baseSize">
-         <size>
-          <width>2000</width>
-          <height>1000</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="testwidget3d" name="widget3d" native="true">
         <property name="minimumSize">
          <size>
           <width>500</width>
@@ -128,14 +105,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>chessglwidget</class>
-   <extends>QOpenGLWidget</extends>
-   <header location="global">chessglwidget.h</header>
-  </customwidget>
-  <customwidget>
-   <class>testwidget3d</class>
+   <class>archesswidget</class>
    <extends>QWidget</extends>
-   <header location="global">testwidget3d.h</header>
+   <header location="global">archesswidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
