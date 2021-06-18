@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     openvc_version = ui->openvc_version_label;
     camera_box = ui->camera_combbox;
+    result_image_picker = ui->result_image_box;
     threshold_method_box = ui->threshold_method_ui;
     threshold_slider = ui->threshold_slider_id;
     arwidget = ui->widget3d;
@@ -30,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     cam_control = new  camera_controller();
     qDebug() << "init";
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
-    connect(cam_control->worker, static_cast<void (camera_worker::*)(QPixmap)>(&camera_worker::image_ready), arwidget->planeTextureImage, &archessbackgound::receive_image);
+    connect(cam_control->worker, &camera_worker::image_ready, arwidget->planeTextureImage, &archessbackgound::receive_image);
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();
@@ -41,6 +42,10 @@ MainWindow::MainWindow(QWidget *parent)
     threshold_method_box->insertItem(3, "Thresh_ToZero");
     threshold_method_box->insertItem(4, "Thresh_ToZero_Inv");
     threshold_method_box->setCurrentIndex(0);
+    result_image_picker->insertItem(0, "Camera Image");
+    result_image_picker->insertItem(1, "Gray Image");
+    result_image_picker->insertItem(2, "Threshold Image");
+    result_image_picker->setCurrentIndex(0);
     cam_control->worker->change_threshold_method(0);
     cam_control->worker->change_threshold(threshold_slider->value());
 }
@@ -89,5 +94,13 @@ void MainWindow::on_threshold_method_ui_currentIndexChanged(int index)
 {
     qDebug() << "Threshold Method changed " << index;
     cam_control->worker->change_threshold_method(index);
+}
+
+
+
+void MainWindow::on_result_image_box_currentIndexChanged(int index)
+{
+    qDebug() << "Changing Result Image to " << index;
+    cam_control->worker->change_result_image(index);
 }
 

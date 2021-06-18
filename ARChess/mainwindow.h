@@ -40,6 +40,8 @@ private slots:
     void on_threshold_slider_id_valueChanged(int value);
     void on_threshold_method_ui_currentIndexChanged(int index);
 
+    void on_result_image_box_currentIndexChanged(int index);
+
 public slots:
     void add_camerabox_item(QString item_name);
 
@@ -48,6 +50,7 @@ private:
     QLabel *openvc_version;
     QComboBox *camera_box;
     QComboBox *threshold_method_box;
+    QComboBox *result_image_picker;
     QSlider *threshold_slider;
     QMap<int, QString> camera_select_map;
     QList<QCameraInfo> cameras;

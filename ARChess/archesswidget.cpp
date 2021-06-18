@@ -21,10 +21,8 @@
 
 archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
 {
-    qDebug() << "Geometry " << this->geometry();
     m_3d_window = new Qt3DExtras::Qt3DWindow();
     m_3d_window->setGeometry(this->geometry());
-    QRect rect = m_3d_window->geometry();
 
     Qt3DRender::QRenderSurfaceSelector *renderSurfaceSelector = new Qt3DRender::QRenderSurfaceSelector();
     renderSurfaceSelector->setSurface(m_3d_window);
@@ -53,7 +51,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     objectsLayerFilter->addLayer(objectsLayer);
     Qt3DRender::QViewport *viewport = new Qt3DRender::QViewport(objectsLayer);
     Qt3DRender::QCameraSelector *objectsCameraSelector = new Qt3DRender::QCameraSelector(viewport);
-    Qt3DRender::QCamera *objectsCamera = new Qt3DRender::QCamera(objectsCameraSelector);
+    objectsCamera = new Qt3DRender::QCamera(objectsCameraSelector);
     objectsCamera->lens()->setPerspectiveProjection(45.f, this->geometry().width() / (float) this->geometry().height(), 0.01f, 1000.f);
     objectsCamera->setPosition(QVector3D(0, 0, -10));
     objectsCamera->setViewCenter(QVector3D(0, 0, 0));
@@ -79,6 +77,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     Qt3DExtras::QTextureMaterial *planeMaterial = new Qt3DExtras::QTextureMaterial(planeEntity);
     Qt3DRender::QTexture2D *planeTexture = new Qt3DRender::QTexture2D(planeMaterial);
     planeTextureImage = new archessbackgound(planeTexture);
+    planeTextureImage->parent_widget = this;
     planeTextureImage->setSize(this->geometry().size());
     planeTexture->addTextureImage(planeTextureImage);
     planeMaterial->setTexture(planeTexture);
@@ -92,24 +91,37 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     planeEntity->addComponent(planeTransform);
     planeEntity->addComponent(backgroundLayer);
 
-    // Torus
-    Qt3DCore::QEntity *torusEntity = new Qt3DCore::QEntity(rootEntity);
-    Qt3DExtras::QTorusMesh *torusMesh = new Qt3DExtras::QTorusMesh(torusEntity);
-    torusMesh->setSlices(50);
-    torusMesh->setRings(50);
-    torusMesh->setRadius(2.0f);
-    Qt3DExtras::QPhongMaterial *torusMaterial = new Qt3DExtras::QPhongMaterial(torusEntity);
-    torusMaterial->setAmbient(Qt::gray);
-    Qt3DCore::QTransform *torusTransform = new Qt3DCore::QTransform(torusEntity);
-    torusTransform->setTranslation(QVector3D(0, 0, 10));
-    torusEntity->addComponent(torusTransform);
-    torusEntity->addComponent(torusMesh);
-    torusEntity->addComponent(torusMaterial);
-    torusEntity->addComponent(objectsLayer);
+    Qt3DCore::QEntity *monkeyEntity = new Qt3DCore::QEntity(rootEntity);
+    Qt3DRender::QMesh *monkeyMesh = new Qt3DRender::QMesh();
+    monkeyMesh->setSource(QUrl("qrc:/models/resources/models/monkey.stl"));
+
+    Qt3DExtras::QPhongMaterial *material = new Qt3DExtras::QPhongMaterial(monkeyEntity);
+    material->setAmbient(QColor::fromRgbF(0.817308, 0.817308, 0.817308));
+    material->setDiffuse(QColor::fromRgbF(0.800000, 0.242753, 0.008774));
+    material->setSpecular(QColor::fromRgbF(0.817308, 0.817308, 0.817308));
+    Qt3DCore::QTransform *monkeyTransform = new Qt3DCore::QTransform;
+    monkeyTransform->setScale3D(QVector3D(1, 1, 1));
+    monkeyTransform->setTranslation(QVector3D(0, 0, 10));
+    monkeyTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), 90.0f) * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 180.0f));
+    monkeyEntity->addComponent(monkeyMesh);
+    monkeyEntity->addComponent(monkeyTransform);
+    monkeyEntity->addComponent(material);
+    monkeyEntity->addComponent(objectsLayer);
 
     m_3d_window_container = QWidget::createWindowContainer(m_3d_window);
     m_3d_window_container->setGeometry(this->geometry());
     m_3d_window_container->setParent(this);
+    planeTextureImage->update();
+    this->update();
+}
+
+
+void archesswidget::resizeEvent(QResizeEvent *event)
+{
+    m_3d_window_container->setGeometry(this->geometry());
+    m_3d_window->setGeometry(this->geometry());
+    objectsCamera->lens()->setPerspectiveProjection(45.f, this->geometry().width() / (float) this->geometry().height(), 0.01f, 1000.f);
+    planeTextureImage->setSize(this->geometry().size());
     planeTextureImage->update();
     this->update();
 }
@@ -121,12 +133,16 @@ archessbackgound::archessbackgound(Qt3DCore::QNode *parent) : Qt3DRender::QPaint
 
 void archessbackgound::paint(QPainter *painter)
 {
-    painter->drawPixmap(0, 0, background.scaled(1024, 740, Qt::KeepAspectRatio));
+    painter->fillRect(painter->viewport(), QColor(0, 0, 0, 0));
+    painter->setCompositionMode (QPainter::CompositionMode_Source);
+    painter->fillRect(painter->viewport(), Qt::transparent);
+    painter->setCompositionMode (QPainter::CompositionMode_SourceOver);
+    QPixmap map = background.scaled(this->parent_widget->size(), Qt::KeepAspectRatio, Qt::FastTransformation);
+    painter->drawPixmap((this->parent_widget->size().width() / 2.0) - (map.size().width()/2.0), 0, map);
 }
 
 void archessbackgound::receive_image(QPixmap img)
 {
     this->background = img;
-    //this->setSize(img.size());
     this->update();
 }

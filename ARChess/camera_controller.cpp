@@ -10,6 +10,11 @@ void camera_worker::capture_video()
 
 }
 
+void camera_worker::change_result_image(int mat_index)
+{
+    result_image_index = mat_index;
+}
+
 void camera_worker::initialize_camera()
 {
     int camera_index = 0;
@@ -39,7 +44,7 @@ void camera_worker::initialize_camera()
         }
         camera_index++;
         //qDebug() << "Searching camera " << camera_index;
-    }while(found_cam || camera_index < 2000);
+    }while(found_cam || camera_index < 10);
     qDebug() << "Found "  << cv_cameras.length() << " Cameras";
 }
 
@@ -126,7 +131,16 @@ void camera_worker::run()
             }
             //qDebug() << "Contours " << contours.size();
             //Change the Pointer to result Image if you want to see another output mat
-            result_image = &camera_image;
+            switch (result_image_index) {
+                case 0: result_image = &camera_image;
+                    break;
+                case 1: result_image = &gray_image;
+                    break;
+                case 2: result_image = &threshold_image;
+                    break;
+                default:
+                    result_image = &camera_image;
+            }
             if(result_image->channels() == 1){
                 cv::cvtColor(*result_image, *result_image, CV_GRAY2RGB);
             }else if(result_image->channels() == 3){
@@ -135,9 +149,6 @@ void camera_worker::run()
             QImage img((uchar*)result_image->data, result_image->cols, result_image->rows, result_image->step, QImage::Format_RGB888);
             if (!img.isNull()){
                 emit image_ready(QPixmap::fromImage(img));
-                emit image_ready(QPixmap::fromImage(img));
-                //cv::flip(*result_image, *result_image, -1);
-                emit image_ready(result_image->data, result_image->cols, result_image->rows);
             }
         }
     }

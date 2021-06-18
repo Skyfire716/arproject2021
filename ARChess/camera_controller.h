@@ -25,6 +25,7 @@ public:
     volatile bool switch_camera_b;
     volatile bool threshold_change_b;
     volatile bool threshold_method_b;
+    volatile int result_image_index;
     volatile int new_cv_index;
     volatile int threshold_value_shared;
     volatile int thresold_method_shared;
@@ -33,6 +34,7 @@ public:
 
 public slots:
     void capture_video();
+    void change_result_image(int mat_index);
     void change_camera(int cv_index);
     void change_threshold(int thresold);
     void change_threshold_method(int threshold_method);
@@ -40,8 +42,6 @@ public slots:
 
 signals:
     void image_ready(QPixmap img);
-    void image_ready(QImage img);
-    void image_ready(unsigned char* image, int width, int height);
     void finished();
     void camera_detected(QString cam_name);
 

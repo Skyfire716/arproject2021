@@ -13,6 +13,7 @@ class archessbackgound : public Qt3DRender::QPaintedTextureImage{
 public:
     archessbackgound(Qt3DCore::QNode *parent = nullptr);
     void paint(QPainter *painter) override;
+    QWidget *parent_widget;
 
 public slots:
     void receive_image(QPixmap img);
@@ -34,6 +35,10 @@ signals:
 private:
     QWidget *m_3d_window_container;
     Qt3DExtras::Qt3DWindow *m_3d_window;
+    Qt3DRender::QCamera *objectsCamera;
+
+protected:
+    void resizeEvent(QResizeEvent *event);
 };
 
 #endif // ARCHESSWIDGET_H
