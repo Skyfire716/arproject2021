@@ -31,6 +31,9 @@ public:
     volatile int thresold_method_shared;
     double calculateAngles(std::vector<cv::Point> points);
     double angle(cv::Point a, cv::Point b);
+    float point_distance(cv::Point a, cv::Point b);
+    float point_distance(cv::Point2f a, cv::Point2f b);
+    int get_ordered_points(cv::Rect rect, std::vector<cv::Point> points);
     bool running;
 
 public slots:
