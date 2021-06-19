@@ -4,6 +4,25 @@
 #include <opencv2/opencv.hpp>
 #include <QString>
 #include <QTemporaryDir>
+#include <math.h>
+
+double camera_worker::angle(cv::Point a, cv::Point b){
+    return (acos((a.x*b.x+a.y*b.y * 1.0)/(sqrt(pow(a.x, 2)+pow(a.y, 2))*sqrt(pow(b.x, 2)+pow(b.y, 2) * 1.0))) * 180.0 / M_PI);
+}
+
+double camera_worker::calculateAngles(std::vector<cv::Point> points) {
+    double angled = 0;
+    for(int i = 0; i < points.size(); i++) {
+        cv::Point v = points[i] - points[(i+1) % 4];
+        cv::Point u = points[(i+2)%4] - points[(i+1)%4];
+        double subangle = angle(u, v);
+        if (subangle <= 80 || subangle >= 100){
+            subangle /= 2;
+        }
+        angled += subangle;
+    }
+    return angled;
+}
 
 void camera_worker::capture_video()
 {
@@ -112,24 +131,55 @@ void camera_worker::run()
             cv::cvtColor(camera_image, gray_image, CV_BGR2GRAY);
             cv::threshold(gray_image, threshold_image, threshold_value, 255, threshold_method);
             contour_vector_t contours;
-            cv::findContours(gray_image, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+            cv::findContours(threshold_image, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+            std::vector<cv::Rect> boundingRects(contours.size());
             for(size_t k = 0; k < contours.size(); k++){
                 contour_t approx_contour;
                 cv::approxPolyDP(contours[k], approx_contour, cv::arcLength(contours[k], true) * 0.02, true);
+                boundingRects[k] = cv::boundingRect(approx_contour);
                 contour_vector_t cov, approx;
                 cov.emplace_back(contours[k]);
                 approx.emplace_back(approx_contour);
-                if(approx_contour.size() > 1){
+                cv::drawContours(camera_image, cov, -1, cv::Scalar(255, 0, 0), 4, 1);
+                cv::Scalar color(0, 0, 255);
+                if(approx_contour.size() == 4){
                     cv::drawContours(camera_image, approx, -1, cv::Scalar(0, 255, 0), 4, 1);
-                    cv::drawContours(camera_image, cov, -1, cv::Scalar(255, 0, 0), 4, 1);
-                    continue;
+                    cv::line(camera_image, approx_contour[0], approx_contour[1], color, 4, cv::LINE_8);
+                    cv::line(camera_image, approx_contour[1], approx_contour[2], color, 4, cv::LINE_8);
+                    cv::line(camera_image, approx_contour[2], approx_contour[3], color, 4, cv::LINE_8);
+                    /*
+                    qDebug() << "Test";
+                    cv::RotatedRect rRect = cv::RotatedRect(approx_contour[0], approx_contour[1], approx_contour[2]);
+                    qDebug() << "Test2";
+                    if(rRect.center.x > camera_image.cols/3 && rRect.center.x < 2 * camera_image.cols/3
+                            && rRect.center.y > camera_image.rows/3 && rRect.center.y < 2 * camera_image.rows/3){
+                        cv::Point2f vertices[4];
+                        qDebug() << "Test3";
+                        rRect.points(vertices);
+                        for (int i = 0; i < 4; i++){
+                            qDebug() << "Test3";
+                            cv::line(camera_image, vertices[i], vertices[(i+1)%4], color, 2);
+                        }
+                    }
+                    */
+
                 }
-                cv::Scalar QUADRILATERAL_COLOR(0, 0, 255);
-                cv::Scalar colour;
-                cv::Rect r = cv::boundingRect(approx_contour);
-                cv::rectangle(camera_image, r, cv::Scalar(0, 0, 255), 4);
+
+                unsigned int counter = 0;
+                for(int i = 0; i < boundingRects[k].width; i++){
+                    for(int j = 0; j < boundingRects[k].height; j++){
+                        counter += threshold_image.at<uchar>(boundingRects[k].y + j, boundingRects[k].x + i);
+                        //Divide Counter every row
+                    }
+                }
+                counter /= boundingRects[k].area();
+                if(counter <= (unsigned int) threshold_value){
+                    cv::rectangle(camera_image, boundingRects[k], cv::Scalar(0, 0, 0), 4);//Black
+                }else{
+                    cv::rectangle(camera_image, boundingRects[k], cv::Scalar(255, 255, 255), 4);//White
+                }
+                //cv::polylines(camera_image, approx_contour, true, color, 4);
             }
-            //qDebug() << "Contours " << contours.size();
             //Change the Pointer to result Image if you want to see another output mat
             switch (result_image_index) {
                 case 0: result_image = &camera_image;

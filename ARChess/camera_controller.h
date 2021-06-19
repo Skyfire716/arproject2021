@@ -29,7 +29,8 @@ public:
     volatile int new_cv_index;
     volatile int threshold_value_shared;
     volatile int thresold_method_shared;
-
+    double calculateAngles(std::vector<cv::Point> points);
+    double angle(cv::Point a, cv::Point b);
     bool running;
 
 public slots:
