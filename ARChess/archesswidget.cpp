@@ -101,7 +101,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     material->setSpecular(QColor::fromRgbF(0.817308, 0.817308, 0.817308));
     Qt3DCore::QTransform *monkeyTransform = new Qt3DCore::QTransform;
     monkeyTransform->setScale3D(QVector3D(1, 1, 1));
-    monkeyTransform->setTranslation(QVector3D(3, 0, 10));
+    monkeyTransform->setTranslation(QVector3D(3, 3, 10));
     monkeyTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), 90.0f) * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 180.0f));
     monkeyEntity->addComponent(monkeyMesh);
     monkeyEntity->addComponent(monkeyTransform);

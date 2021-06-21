@@ -18,7 +18,8 @@ class camera_worker : public QObject
     QThread worker_thread;
     typedef std::vector<cv::Point> contour_t;
     typedef std::vector<contour_t> contour_vector_t;
-
+    const int BLACK_FIELD_SUM = 58000; //Experience based
+    const int WHITE_FIELD_CROSSING = 3000;
 public:
     volatile bool init_b;
     volatile bool capture_b;
@@ -34,6 +35,7 @@ public:
     float point_distance(cv::Point a, cv::Point b);
     float point_distance(cv::Point2f a, cv::Point2f b);
     int get_ordered_points(cv::Rect rect, std::vector<cv::Point> points);
+    void diagonal_probeing(cv::Point2f start_corner, float diagonalLength, cv::Point2f diagonalNormalized, cv::Point2f diagonalNormalVec, cv::Point2f *result_array);
     bool running;
 
 public slots:
