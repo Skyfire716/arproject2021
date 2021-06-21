@@ -223,30 +223,165 @@ void camera_worker::run()
                         //Diagonale durch laufen
                         cv::Point2f diagonalA(d->x - a->x, d->y - a->y);
                         cv::Point2f diagonalB(b->x - c->x, b->y - c->y);
-                        float length = sqrt(pow(diagonalA.x, 2) + pow(diagonalA.y, 2));
-                        diagonalA.x = diagonalA.x / length;
-                        diagonalA.y = diagonalA.y / length;
-                        length = sqrt(pow(diagonalB.x, 2) + pow(diagonalB.y, 2));
-                        diagonalB.x = diagonalB.x / length;
-                        diagonalB.y = diagonalB.y / length;
+                        float lengthA = sqrt(pow(diagonalA.x, 2) + pow(diagonalA.y, 2));
+                        diagonalA.x = diagonalA.x / lengthA;
+                        diagonalA.y = diagonalA.y / lengthA;
+                        float lengthB = sqrt(pow(diagonalB.x, 2) + pow(diagonalB.y, 2));
+                        diagonalB.x = diagonalB.x / lengthB;
+                        diagonalB.y = diagonalB.y / lengthB;
                         if(abs(point_distance(*a, *d)) < abs(point_distance(*b, *c))){
                             for(int i = 0; i < (int) abs(point_distance(*a, *d)); i++){
                                 counter += (threshold_image.at<uchar>(a->y + i * diagonalA.y, a->x + i * diagonalA.x) > threshold_value);
                             }
-                            counter /= (int) abs(point_distance(*a, *d));
+                            counter /= (unsigned int) abs(point_distance(*a, *d));
                         }else{
                             for(int i = 0; i < (int) abs(point_distance(*c, *b)); i++){
                                 counter += (threshold_image.at<uchar>(c->y + i * diagonalB.y, c->x - i * diagonalB.x) > threshold_value);
                             }
-                            counter /= (int) abs(point_distance(*c, *b));
+                            counter /= (unsigned int) abs(point_distance(*c, *b));
                         }
-                        qDebug() << "Counter "<< counter << " " << threshold_value;
-
+                        //qDebug() << "Counter "<< counter << " " << threshold_value;
                         if(is_first){
+                            char fields_found = 0;
+                            unsigned int counterTL = 0, counterTR = 0, counterBL = 0, counterBR = 0;
+                            int strechTL = 0, strechBR = 0, strechTR = 0;
+                            int tobig = 0;
+                            cv::Point2f normalDiagonalA(-diagonalA.y, diagonalA.x);
+                            cv::Point2f normalDiagonalB(-diagonalB.y, diagonalB.x);
+                            TL:
+                            strechTL++;
+                            for(int i = 0; i < (int)(lengthA); i++){
+                                uchar value = threshold_image.at<uchar>(a->y + (-i) * diagonalA.y * strechTL, a->x + (-i) * diagonalA.x * strechTL);
+                                counterTL += (value < threshold_value);
+                                if(value >= 200){
+                                    tobig++;
+                                    if(tobig > 5){
+                                        tobig = (int)(lengthA);
+                                    }
+                                }
+                            }
+                            //Passt was nicht
+                            if(counterTL < (unsigned int)threshold_value && strechTL <= 8 && tobig <= 5){
+                                goto TL;
+                            }
+                            tobig = 0;
+                            BR:
+                            strechBR++;
+                            for(int i = 0; i < (int)(lengthA); i++){
+                                int value = 0;
+                                for(int j = -3; j < 3; j++){
+                                    value += threshold_image.at<uchar>(d->y + i * diagonalA.y * strechBR + j * normalDiagonalA.y, d->x + i * diagonalA.x * strechBR + j * normalDiagonalA.x);
+                                }
+                                if(value > 1400) {
+                                    //qDebug() << "To Big";
+                                }
+                                counterBR += (value > threshold_value);
+                                if(value >= 200){
+                                    tobig++;
+                                    if(tobig > 5){
+                                        tobig = (int)(lengthA);
+                                    }
+                                }
+                            }
+                            if(counterBR < (unsigned int)threshold_value && strechBR <= 8 && tobig <= 5){
+                                goto BR;
+                            }
+                            tobig = 0;
+                            cv::Point2f corner;
+                            cv::Point2f last_corner;
+                            cv::Point2f trdiagonal[8];
+                            for(int i = 0; i < 8; i++){
+                                trdiagonal[i].x = 0;
+                                trdiagonal[i].y = 0;
+                            }
+                            trdiagonal[0].x = c->x;
+                            trdiagonal[0].y = c->y;
+                            corner.x = c->x;
+                            corner.y = c->y;
+                            for(int i = 0; i < (int)(6 * lengthB); i++){
+                                int value = 0;
+                                for(int j = -5; j <= 5; j++){
+                                    value += threshold_image.at<uchar>(corner.y + (-i) * diagonalB.y + j * normalDiagonalB.y, corner.x + (-i) * diagonalB.x + j * normalDiagonalB.x);
+                                }
+                                counterTR += value;
+                                //qDebug() << "Value " << QString::number(value);
+                                if(value > 2780 && 50 < point_distance(last_corner, cv::Point2f(corner.x + (-i) * diagonalB.x, corner.y + (-i) * diagonalB.y))) {
+                                    bool added_point = false;
+                                    float meandistance = 0;
+                                    for(int o = 0; o < 8; o++){
+                                        if(trdiagonal[o].x == 0 && trdiagonal[o].y == 0){
+                                            if(o != 0){
+                                                meandistance /= o;
+                                            }
+                                            qDebug() << "Mean " << QString::number(meandistance);
+                                            cv::circle(camera_image, cv::Point(corner.x + (-i) * diagonalB.x, corner.y + (-i) * diagonalB.y), 10, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                                            qDebug() << "To Big TR " << QString::number(value) << " i " << QString::number(i%((int)(8*lengthB))) << " counterTR " << QString::number(counterTR) << " d to last " << QString::number(point_distance(last_corner, cv::Point2f(corner.x + (-i) * diagonalB.x, corner.y + (-i) * diagonalB.y)));
+                                            trdiagonal[o].x = corner.x + (-i) * diagonalB.x;
+                                            trdiagonal[o].y = corner.y + (-i) * diagonalB.y;
+                                            if(o != 0 && abs(point_distance(trdiagonal[o], trdiagonal[o-1])) > meandistance * 1.3){
+                                                qDebug() << "Distance is longer than mean " << QString::number(abs(point_distance(trdiagonal[o], trdiagonal[o-1]))) << " mean " << QString::number(meandistance);
+                                            }
+                                            last_corner.x = corner.x + (-i) * diagonalB.x;
+                                            last_corner.y = corner.y + (-i) * diagonalB.y;
+                                            counterTR = 0;
+                                            added_point = true;
+                                            o = 8;
+                                        }else{
+                                            if(o > 0){
+                                                meandistance += abs(point_distance(trdiagonal[o], trdiagonal[o-1]));
+                                            }
+                                        }
+                                    }
+                                    if(!added_point){
+                                        i = (int)(8 * lengthB);
+                                    }
+                                }
+                            }
+                            for(int i = 0; i < (int)(lengthB); i++){
+                                counterBL += (threshold_image.at<uchar>(b->y + i * diagonalB.y, b->x + i * diagonalB.x) > threshold_value);
+                            }
+                            //counterTR /= (unsigned int) lengthB;
+                            //counterBL /= (unsigned int) lengthB;
+                            fields_found += (counterTL < (unsigned int)threshold_value);
+                            fields_found += (counterTR < (unsigned int)threshold_value);
+                            fields_found += (counterBL < (unsigned int)threshold_value);
+                            fields_found += (counterBR < (unsigned int)threshold_value);
+                            qDebug() << "TLS " << QString::number(strechTL);
+                            qDebug() << "BRS " << QString::number(strechBR);
+                            if(counterTL < (unsigned int)threshold_value){
+                                qDebug() << "TL detcted black " << QString::number(strechTL);
+                            }
+                            if(counterBR < (unsigned int)threshold_value){
+                                qDebug() << "BR detcted black " << QString::number(strechBR);
+                            }
+                            if(counterTR < (unsigned int)threshold_value){
+                                qDebug() << "TR detcted black";
+                            }
+                            if(counterBL < (unsigned int)threshold_value){
+                                qDebug() << "BL detcted black";
+                            }
+                            qDebug() << "Found " << QString::number(fields_found) << " diag fields";
+                            switch (fields_found) {
+                                case 1:
+                                    qDebug() << "Detected Corner";
+                                break;
+                            case 2:
+                                qDebug() << "Detected Edge";
+                                break;
+                            case 3:
+                                qDebug() << "Probably missdetected";
+                                break;
+                            case 4:
+                                qDebug() << "Middle";
+                                break;
+                            default:
+                                qDebug() << "Undefined pattern";
+                            }
                             masterA = a;
                             masterB = b;
                             masterC = c;
                             masterD = d;
+                            /*
                             for(size_t l = 0; l < contours.size(); l++){
                                 if(k != l){
                                     a = NULL;
@@ -266,15 +401,25 @@ void camera_worker::run()
                                     }
                                 }
                             }
-                            //is_first = false;
+                            */
+                            if(fields_found != 0){
+                                //Top Left
+                                cv::line(camera_image, *a, cv::Point(a->x + diagonalA.x * (-1) * strechTL * lengthA, a->y + diagonalA.y * (-1) * strechTL * lengthA), cv::Scalar(255, 0, 255), 4);
+                                //Top Rigth
+                                cv::line(camera_image, *c, cv::Point(c->x + diagonalB.x * (-1) * strechTR * lengthB, c->y + diagonalB.y * (-1) * strechTR * lengthB), cv::Scalar(255, 0, 255), 4);
+                                //Bottom Left
+                                cv::line(camera_image, *b, cv::Point(b->x + diagonalB.x * 1 * lengthB, b->y + diagonalB.y * 1 * lengthB), cv::Scalar(255, 0, 255), 4);
+                                //Bottom Right
+                                cv::line(camera_image, *d, cv::Point(d->x + diagonalA.x * 1 * strechBR * lengthA, d->y + diagonalA.y * 1 * strechBR * lengthA), cv::Scalar(255, 0, 255), 4);
+                                is_first = false;
+                            }
                         }
 
                     }
-                    qDebug() << "Done";
                     if(counter <= (unsigned int) threshold_value){
-                        cv::rectangle(camera_image, boundingRects[k], cv::Scalar(0, 0, 0), 4);//Black
+                        //cv::rectangle(camera_image, boundingRects[k], cv::Scalar(0, 0, 0), 4);//Black
                     }else{
-                        cv::rectangle(camera_image, boundingRects[k], cv::Scalar(255, 255, 255), 4);//White
+                        //cv::rectangle(camera_image, boundingRects[k], cv::Scalar(255, 255, 255), 4);//White
                     }
                     //cv::polylines(camera_image, approx_contour, true, color, 4);
                 }
