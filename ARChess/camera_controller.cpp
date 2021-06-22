@@ -11,6 +11,11 @@ double camera_worker::angle(cv::Point a, cv::Point b){
     return (acos((a.x*b.x+a.y*b.y * 1.0)/(sqrt(pow(a.x, 2)+pow(a.y, 2))*sqrt(pow(b.x, 2)+pow(b.y, 2) * 1.0))) * 180.0 / M_PI);
 }
 
+double camera_worker::angle(cv::Point2f a, cv::Point2f b)
+{
+    return (acos((a.x*b.x+a.y*b.y * 1.0)/(sqrt(pow(a.x, 2)+pow(a.y, 2))*sqrt(pow(b.x, 2)+pow(b.y, 2) * 1.0))) * 180.0 / M_PI);
+}
+
 float camera_worker::normalizeVec(cv::Point2f *p)
 {
     float length = sqrt(pow(p->x, 2) + pow(p->y, 2));
@@ -281,6 +286,96 @@ bool camera_worker::is_zero(cv::Point2f p)
     return (p.x == 0 && p.y == 0);
 }
 
+void camera_worker::check_texture(cv::Point2f start, cv::Point2f *resultA, cv::Point2f *resultB, cv::Point2f guideA, cv::Point2f guideB, cv::Point2f normalDiagonalA, cv::Point2f normalDiagonalB, cv::Point2f guideAB)
+{
+    cv::Point2f probe_point = start;
+    int last_color = 2;
+    for(int i = 0; i < 8; i++){
+        if(!is_zero(resultA[i]) && !is_zero(resultB[i])){
+            cv::Point2f p2p_line = line_P2P(resultA[i], resultB[i]);
+            normalizeVec(&p2p_line);
+            cv::Point2f normal_p2p_line(-p2p_line.y, p2p_line.x);
+            if(angle(guideA, normal_p2p_line) > 7 || angle(guideB, normal_p2p_line) > 7){
+                qDebug() << "Leaving";
+                goto SINGLE_SIDE_CHECK;
+            }
+            cv::circle(camera_image, resultA[i], 5, cv::Scalar(0, 255, 0), 4);
+            cv::circle(camera_image, resultB[i], 5, cv::Scalar(0, 255, 0), 4);
+            cv::line(camera_image, resultA[i], resultB[i], cv::Scalar(0, 0, 255), 3);
+            cv::Point2f betterNormal(guideA.x + guideB.x + normal_p2p_line.x, guideA.y + guideB.y + normal_p2p_line.y);
+            normalizeVec(&betterNormal);
+            qDebug() << "LOL";
+            float r = intersection_NormalLine_NormalLine(probe_point, betterNormal, resultA[i], p2p_line);
+            float r2 = intersection_NormalLine_NormalLine(probe_point, betterNormal, resultB[i], p2p_line);
+            qDebug() << "LOl Ende";
+            cv::circle(camera_image, r * betterNormal + probe_point, 5, cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+            cv::circle(camera_image, 2 * r * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+            cv::circle(camera_image, 2 * r2 * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+            probe_point = 2 * r * betterNormal + probe_point;
+            continue;
+        }
+        SINGLE_SIDE_CHECK:
+        if(!is_zero(resultA[i])){
+
+        }
+        if(!is_zero(resultB[i])){
+            cv::circle(camera_image, resultB[i], 5, cv::Scalar(0, 255, 0), 4);
+            cv::Point2f normal_guideB(-guideB.y, guideB.x);
+            //cv::Point2f p2p_line = angled_vector_from_normal(normalDiagonalB, 170);
+            cv::Point2f p2p_line = guideAB;
+            cv::line(camera_image, resultB[i], resultB[i] + 70 * p2p_line, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
+            normalizeVec(&p2p_line);
+            cv::Point2f normal_p2p_line(-p2p_line.y, p2p_line.x);
+            cv::line(camera_image, resultB[i], resultB[i] + 70 * normal_p2p_line, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
+            cv::Point2f betterNormal(guideA.x + guideB.x + normal_p2p_line.x, guideA.y + guideB.y + normal_p2p_line.y);
+            normalizeVec(&betterNormal);
+            qDebug() << "LOLLL";
+            print_vec(probe_point);
+            print_vec(betterNormal);
+            print_vec(resultB[i]);
+            print_vec(p2p_line);
+            float r = intersection_NormalLine_NormalLine(probe_point, betterNormal, resultB[i], p2p_line);
+            qDebug() << "LOLLLLL";
+            cv::circle(camera_image, 2 * r * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+            probe_point = 2 * r * betterNormal + probe_point;
+            if(i > 0){
+                qDebug() << "Shift Probe";
+                float r2 = intersection_NormalLine_NormalLine(resultB[i - 1], normal_p2p_line, resultB[i], p2p_line);
+                float r3 = intersection_NormalLine_NormalLine(probe_point, normal_p2p_line, resultB[i], p2p_line);
+                cv::Point2f distance_probe(r3 * normal_p2p_line.x, r3 * normal_p2p_line.y);
+                cv::Point2f distance_vec(r2 * normal_p2p_line.x, r2 * normal_p2p_line.y);
+                float p2p_distance = normalizeVec(&distance_vec);
+                float probe_distance = normalizeVec(&distance_probe);
+                qDebug() << "P2P D " << QString::number(p2p_distance);
+                qDebug() << "Probe D " << QString::number(probe_distance);
+                cv::circle(camera_image, probe_point + betterNormal * (probe_distance - p2p_distance / 2), 5, cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+                probe_point = probe_point + betterNormal * (probe_distance - p2p_distance / 2);
+            }
+            int color_result = check_color(threshold_image, probe_point.x, probe_point.y);
+            if(color_result == last_color && last_color != 2){
+                qDebug() << "Two times Same Color -> Error Maybe Edge detected";
+                i = 8;
+            }
+            if(color_result == 1){
+                qDebug() << "White";
+            }else if(color_result == 0){
+                qDebug() << "Black";
+            }else{
+                qDebug() << "Undefined";
+            }
+            last_color = color_result;
+
+        }else {
+            i = 8;
+        }
+    }
+}
+
+void camera_worker::print_vec(cv::Point2f p)
+{
+    qDebug() << QString::number(p.x) << " " << QString::number(p.y);
+}
+
 void camera_worker::capture_video()
 {
 
@@ -454,6 +549,10 @@ void camera_worker::run()
                             counter /= (unsigned int) abs(point_distance(*c, *b));
                         }
                         if(is_first){
+                            cv::line(camera_image, *a, *c, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
+                            cv::line(camera_image, *a, *b, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
+                            cv::line(camera_image, *c, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
+                            cv::line(camera_image, *b, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
                             cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
                             char fields_found = 0;
                             unsigned char counterArray[4];
@@ -487,106 +586,12 @@ void camera_worker::run()
                                 }
                             }
 
-                            cv::Point2f probe_point = center_point;
-                            int last_color = 2;
-                            for(int i = 0; i < 8; i++){
-                                if(!is_zero(trdiagonal[i])){
-                                    cv::Point2f p2p_line = 70 * angled_vector_from_normal(normalDiagonalB, 170);
-                                    normalizeVec(&p2p_line);
-                                    cv::Point2f normal_p2p_line(-p2p_line.y, p2p_line.x);
-                                    cv::Point2f betterNormal(lineAB.x + lineCD.x + normal_p2p_line.x, lineAB.y + lineCD.y + normal_p2p_line.y);
-                                    normalizeVec(&betterNormal);
-                                    float r = intersection_NormalLine_NormalLine(probe_point, betterNormal, trdiagonal[i], p2p_line);
-                                    cv::circle(camera_image, 2 * r * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
-                                    probe_point = 2 * r * betterNormal + probe_point;
-                                    if(i > 0){
-                                        float r2 = intersection_NormalLine_NormalLine(trdiagonal[i - 1], normal_p2p_line, trdiagonal[i], p2p_line);
-                                        float r3 = intersection_NormalLine_NormalLine(probe_point, normal_p2p_line, trdiagonal[i], p2p_line);
-                                        cv::Point2f distance_probe(r3 * normal_p2p_line.x, r3 * normal_p2p_line.y);
-                                        cv::Point2f distance_vec(r2 * normal_p2p_line.x, r2 * normal_p2p_line.y);
-                                        float p2p_distance = normalizeVec(&distance_vec);
-                                        float probe_distance = normalizeVec(&distance_probe);
-                                        cv::circle(camera_image, probe_point + betterNormal * (probe_distance - p2p_distance / 2), 5, cv::Scalar(255, 0, 0), 4, cv::LINE_8);
-                                        probe_point = probe_point + betterNormal * (probe_distance - p2p_distance / 2);
-                                    }
-                                    int color_result = check_color(threshold_image, probe_point.x, probe_point.y);
-                                    if(color_result == last_color && last_color != 2){
-                                        qDebug() << "Two times Same Color -> Error Maybe Edge detected";
-                                        i = 8;
-                                    }
-                                    if(color_result == 1){
-                                        qDebug() << "White";
-                                    }else if(color_result == 0){
-                                        qDebug() << "Black";
-                                    }else{
-                                        qDebug() << "Undefined";
-                                    }
-                                    last_color = color_result;
-                                }else {
-                                    i = 8;
-                                }
-                            }
+                            check_texture(center_point, tldiagonal, trdiagonal, lineAB, lineCD, normalDiagonalA, normalDiagonalB, lineAC);
+                            check_texture(center_point - lineAC, tldiagonal, trdiagonal, lineAB, lineCD, normalDiagonalA, normalDiagonalB, lineAC);
+                            //check_texture(center_point, trdiagonal, brdiagonal, lineAC, lineBD, normalDiagonalA, normalDiagonalB, lineCD);
 
 
-                            probe_point = center_point + lineAC * lengthAC;
-                            last_color = 2;
-                            for(int i = 0; i < 8; i++){
-                                if(!is_zero(trdiagonal[i])){
-                                    cv::Point2f p2p_line = 70 * angled_vector_from_normal(normalDiagonalB, 170);
-                                    normalizeVec(&p2p_line);
-                                    cv::Point2f normal_p2p_line(-p2p_line.y, p2p_line.x);
-                                    cv::Point2f betterNormal(lineAB.x + lineCD.x + normal_p2p_line.x, lineAB.y + lineCD.y + normal_p2p_line.y);
-                                    normalizeVec(&betterNormal);
-                                    float r = intersection_NormalLine_NormalLine(probe_point, betterNormal, trdiagonal[i], p2p_line);
-                                    cv::circle(camera_image, 2 * r * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
-                                    probe_point = 2 * r * betterNormal + probe_point;
-                                    if(i > 0){
-                                        float r2 = intersection_NormalLine_NormalLine(trdiagonal[i - 1], normal_p2p_line, trdiagonal[i], p2p_line);
-                                        float r3 = intersection_NormalLine_NormalLine(probe_point, normal_p2p_line, trdiagonal[i], p2p_line);
-                                        cv::Point2f distance_probe(r3 * normal_p2p_line.x, r3 * normal_p2p_line.y);
-                                        cv::Point2f distance_vec(r2 * normal_p2p_line.x, r2 * normal_p2p_line.y);
-                                        float p2p_distance = normalizeVec(&distance_vec);
-                                        float probe_distance = normalizeVec(&distance_probe);
-                                        cv::circle(camera_image, probe_point + betterNormal * (probe_distance - p2p_distance / 2), 5, cv::Scalar(255, 0, 0), 4, cv::LINE_8);
-                                        probe_point = probe_point + betterNormal * (probe_distance - p2p_distance / 2);
-                                    }
-                                    int color_result = check_color(threshold_image, probe_point.x, probe_point.y);
-                                    if(color_result == last_color && last_color != 2){
-                                        qDebug() << "Two times Same Color -> Error Maybe Edge detected";
-                                        i = 8;
-                                    }
-                                    if(color_result == 1){
-                                        qDebug() << "White";
-                                    }else if(color_result == 0){
-                                        qDebug() << "Black";
-                                    }else{
-                                        qDebug() << "Undefined";
-                                    }
-                                    last_color = color_result;
-                                }else {
-                                    i = 8;
-                                }
-                            }
-
-                            /*
-                            cv::Point2f probe_point = center_point;
-                            for(int i = 0; i < 8; i++){
-                                if(!is_zero(tldiagonal[i]) && !is_zero(trdiagonal[i])){
-                                    cv::Point2f p2p_line = line_P2P(tldiagonal[i], trdiagonal[i]);
-                                    normalizeVec(&p2p_line);
-                                    cv::Point2f normal_p2p_line(-p2p_line.y, p2p_line.x);
-                                    cv::Point2f betterNormal(lineAB.x + lineCD.x + normal_p2p_line.x, lineAB.y + lineCD.y + normal_p2p_line.y);
-                                    normalizeVec(&betterNormal);
-                                    float r = intersection_NormalLine_NormalLine(probe_point, betterNormal, tldiagonal[i], p2p_line);
-                                    cv::circle(camera_image, 2 * r * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
-                                    probe_point = 2 * r * betterNormal + probe_point;
-                                }else {
-                                    i = 8;
-                                }
-                            }
-                            */
-
-
+/*
                             qDebug() << counterArray[COUNTER_TL] << " corners TL";
                             qDebug() << counterArray[COUNTER_TR] << " corners TR";
                             qDebug() << counterArray[COUNTER_BL] << " corners BL";
@@ -633,12 +638,7 @@ void camera_worker::run()
                                     int *ranges = CHESS_BOARD_RANGER[i];
                                     for(int j = 0; j < 4; j++){
                                         int walker = 0;
-                                        /*
-                                        while(walker < ranges[(0 + j) % 4] || walker < ranges[(1 + j) % 4] || walker < ranges[(2 + j) % 4] || walker < ranges[(3 + j) % 4]){
 
-
-                                        }
-                                        */
                                     }
                                 }else if(matches == 3){
                                     qDebug() << "Tribble Match Index " << i;
@@ -646,7 +646,7 @@ void camera_worker::run()
                                     qDebug() << "Dubble Match Index " << i;
                                 }
                             }
-
+*/
                             /*
                             for(int i = 0; i < qMin(counterArray[COUNTER_TL], counterArray[COUNTER_TR]); i++){
                                 cv::Point2f tl = tldiagonal[i];

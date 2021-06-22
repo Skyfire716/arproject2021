@@ -149,6 +149,7 @@ public:
     float normalizeVec(cv::Point2f *p);
     double calculateAngles(std::vector<cv::Point> points);
     double angle(cv::Point a, cv::Point b);
+    double angle(cv::Point2f a, cv::Point2f b);
     float point_distance(cv::Point a, cv::Point b);
     float point_distance(cv::Point2f a, cv::Point2f b);
     int get_ordered_points(cv::Rect rect, std::vector<cv::Point> points);
@@ -159,6 +160,8 @@ public:
     float intersection_NormalLine_NormalLine(cv::Point2f line_p1, cv::Point2f line_n1, cv::Point2f line_p2, cv::Point2f line_n2);
     int check_color(cv::Mat image, int x, int y);
     bool is_zero(cv::Point2f p);
+    void check_texture(cv::Point2f start, cv::Point2f *resultA, cv::Point2f *resultB, cv::Point2f guideA, cv::Point2f guideB, cv::Point2f normalDiagonalA, cv::Point2f normalDiagonalB, cv::Point2f guideAB);
+    void print_vec(cv::Point2f p);
     bool running;
 
 public slots:

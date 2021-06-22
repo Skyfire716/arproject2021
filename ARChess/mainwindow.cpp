@@ -50,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     cam_control->worker->change_threshold_method(0);
     cam_control->worker->change_threshold(threshold_slider->value());
     //Individual Values for testing Today
-    threshold_slider->setValue(148);
+    threshold_slider->setValue(110);
 }
 
 MainWindow::~MainWindow()
