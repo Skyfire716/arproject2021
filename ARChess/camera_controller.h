@@ -12,38 +12,38 @@
 #include <QVector>
 #include <cstdio>
 
-#define A1 0
-#define A3 1
-#define A5 2
-#define A7 3
-#define B2 4
-#define B4 5
-#define B6 6
-#define B8 7
-#define C1 8
-#define C3 9
-#define C5 10
-#define C7 11
-#define D2 12
-#define D4 13
-#define D6 14
-#define D8 15
-#define E1 16
-#define E3 17
-#define E5 18
-#define E7 19
-#define F2 20
-#define F4 21
-#define F6 22
-#define F8 23
-#define G1 24
-#define G3 25
-#define G5 26
-#define G7 27
-#define H2 28
-#define H4 29
-#define H6 30
-#define H8 31
+#define CHESSBOARD_A1 0
+#define CHESSBOARD_A3 1
+#define CHESSBOARD_A5 2
+#define CHESSBOARD_A7 3
+#define CHESSBOARD_B2 4
+#define CHESSBOARD_B4 5
+#define CHESSBOARD_B6 6
+#define CHESSBOARD_B8 7
+#define CHESSBOARD_C1 8
+#define CHESSBOARD_C3 9
+#define CHESSBOARD_C5 10
+#define CHESSBOARD_C7 11
+#define CHESSBOARD_D2 12
+#define CHESSBOARD_D4 13
+#define CHESSBOARD_D6 14
+#define CHESSBOARD_D8 15
+#define CHESSBOARD_E1 16
+#define CHESSBOARD_E3 17
+#define CHESSBOARD_E5 18
+#define CHESSBOARD_E7 19
+#define CHESSBOARD_F2 20
+#define CHESSBOARD_F4 21
+#define CHESSBOARD_F6 22
+#define CHESSBOARD_F8 23
+#define CHESSBOARD_G1 24
+#define CHESSBOARD_G3 25
+#define CHESSBOARD_G5 26
+#define CHESSBOARD_G7 27
+#define CHESSBOARD_H2 28
+#define CHESSBOARD_H4 29
+#define CHESSBOARD_H6 30
+#define CHESSBOARD_H8 31
 
 class camera_worker : public QObject
 {
@@ -52,7 +52,10 @@ class camera_worker : public QObject
     typedef std::vector<cv::Point> contour_t;
     typedef std::vector<contour_t> contour_vector_t;
     const int BLACK_FIELD_SUM = 58000; //Experience based
+    const int WHITE_FIELD_SUM = 500;
     const int WHITE_FIELD_CROSSING = 3000;
+    const int BLACK_FIELD_CROSSING = 500;
+    const int COLOR_CHECK_AREA = 5;
     const int COUNTER_TL = 0;
     const int COUNTER_BL = 1;
     const int COUNTER_TR = 2;
@@ -149,7 +152,13 @@ public:
     float point_distance(cv::Point a, cv::Point b);
     float point_distance(cv::Point2f a, cv::Point2f b);
     int get_ordered_points(cv::Rect rect, std::vector<cv::Point> points);
-    void diagonal_probeing(cv::Point2f start_corner, float diagonalLength, cv::Point2f diagonalNormalized, cv::Point2f diagonalNormalVec, cv::Point2f *result_array);
+    void diagonal_probeing(cv::Point2f start_corner, float diagonalLength, cv::Point2f diagonalNormalized, cv::Point2f diagonalNormalVec, cv::Point2f *result_array, bool is_black);
+    cv::Point2f intersection_P2PLine_P2PLine(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3, cv::Point2f p4);
+    cv::Point2f line_P2P(cv::Point2f p1, cv::Point2f p2);
+    cv::Point2f angled_vector_from_normal(cv::Point2f normal, float angle_deg);
+    float intersection_NormalLine_NormalLine(cv::Point2f line_p1, cv::Point2f line_n1, cv::Point2f line_p2, cv::Point2f line_n2);
+    int check_color(cv::Mat image, int x, int y);
+    bool is_zero(cv::Point2f p);
     bool running;
 
 public slots:

@@ -94,6 +94,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QLabel" name="threshold_value_label_ui">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QComboBox" name="result_image_box"/>
       </item>
       <item>

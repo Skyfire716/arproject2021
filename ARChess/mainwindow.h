@@ -48,6 +48,7 @@ public slots:
 private:
     Ui::MainWindow *ui;
     QLabel *openvc_version;
+    QLabel *threshold_value_label;
     QComboBox *camera_box;
     QComboBox *threshold_method_box;
     QComboBox *result_image_picker;

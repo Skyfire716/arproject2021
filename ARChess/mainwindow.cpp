@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
     result_image_picker = ui->result_image_box;
     threshold_method_box = ui->threshold_method_ui;
     threshold_slider = ui->threshold_slider_id;
+    threshold_value_label = ui->threshold_value_label_ui;
     arwidget = ui->widget3d;
     QString version_text;
     version_text = "OpenCV: ";
@@ -49,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     cam_control->worker->change_threshold_method(0);
     cam_control->worker->change_threshold(threshold_slider->value());
     //Individual Values for testing Today
-    threshold_slider->setValue(70);
+    threshold_slider->setValue(148);
 }
 
 MainWindow::~MainWindow()
@@ -89,7 +90,9 @@ void MainWindow::on_threshold_slider_id_valueChanged(int value)
 {
     qDebug() << "Threshold Value changed to " << value;
     cam_control->worker->change_threshold(value);
-
+    if(threshold_value_label){
+        threshold_value_label->setText(QString::number(value));
+    }
 }
 
 void MainWindow::on_threshold_method_ui_currentIndexChanged(int index)
