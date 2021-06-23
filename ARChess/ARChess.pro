@@ -1,4 +1,4 @@
-QT       += core gui multimedia multimediawidgets androidextras
+QT       += core gui multimedia multimediawidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -22,6 +22,7 @@ FORMS += \
     mainwindow.ui
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    QT += androidextras
     ANDROID_EXTRA_LIBS = \
         $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_core.so \
         $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_imgproc.so \
