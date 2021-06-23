@@ -142,6 +142,7 @@ public:
     volatile bool switch_camera_b;
     volatile bool threshold_change_b;
     volatile bool threshold_method_b;
+    volatile bool result_image_index_b;
     volatile int result_image_index;
     volatile int new_cv_index;
     volatile int threshold_value_shared;
@@ -149,6 +150,8 @@ public:
     float normalizeVec(cv::Point2f *p);
     double calculateAngles(std::vector<cv::Point> points);
     double angle(cv::Point a, cv::Point b);
+    double angle(cv::Point2f a, cv::Point b);
+    double angle(cv::Point a, cv::Point2f b);
     double angle(cv::Point2f a, cv::Point2f b);
     float point_distance(cv::Point a, cv::Point b);
     float point_distance(cv::Point2f a, cv::Point2f b);
@@ -157,6 +160,9 @@ public:
     cv::Point2f intersection_P2PLine_P2PLine(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3, cv::Point2f p4);
     cv::Point2f line_P2P(cv::Point2f p1, cv::Point2f p2);
     cv::Point2f angled_vector_from_normal(cv::Point2f normal, float angle_deg);
+    cv::Point2f getsubPixel(cv::Point2f point);
+    void harris_values(cv::Rect rect, QList<cv::Point> *edges);
+    bool field_check(cv::Rect rect, cv::Point2f p);
     float intersection_NormalLine_NormalLine(cv::Point2f line_p1, cv::Point2f line_n1, cv::Point2f line_p2, cv::Point2f line_n2);
     int check_color(cv::Mat image, int x, int y);
     bool is_zero(cv::Point2f p);
