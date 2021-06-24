@@ -54,11 +54,23 @@ double camera_worker::calculateAngles(std::vector<cv::Point> points) {
 }
 
 float camera_worker::point_distance(cv::Point a, cv::Point b){
-    return sqrt((pow(b.x - a.x, 2) + pow(b.y - a.y, 2)) * 1.0);
+    return point_distance(cv::Point2f(a.x, a.y), cv::Point2f(b.x, b.y));
+}
+
+float camera_worker::point_distance(cv::Point2f a, cv::Point b)
+{
+    return point_distance(a, cv::Point2f(b.x, b.y));
+}
+
+float camera_worker::point_distance(cv::Point a, cv::Point2f b)
+{
+    return point_distance(cv::Point2f(a.x, a.y), b);
 }
 
 float camera_worker::point_distance(cv::Point2f a, cv::Point2f b){
-    return sqrt((pow(b.x - a.x, 2) + pow(b.y - a.y, 2)) * 1.0);
+    QVector2D av(a.x, a.y);
+    QVector2D bv(b.x, b.y);
+    return av.distanceToPoint(bv);
 }
 
 int camera_worker::get_ordered_points(cv::Rect rect, std::vector<cv::Point> points)
@@ -185,7 +197,7 @@ void camera_worker::diagonal_probeing(cv::Point2f start_corner, float diagonalLe
             //qDebug() << "BLACK CROSSING " << (value < BLACK_FIELD_CROSSING);
         }
         //qDebug() << "DISTANCE " << (50 < point_distance(last_corner, cv::Point2f(corner.x + sign * i * diagonalNormalized.x, corner.y + sign * i * diagonalNormalized.y)));
-        if(((!is_black && value < BLACK_FIELD_CROSSING) || (is_black && value > WHITE_FIELD_CROSSING)) && 50 < point_distance(last_corner, cv::Point2f(x, y))) {
+        if(((!is_black && value < BLACK_FIELD_CROSSING) || (is_black && value > WHITE_FIELD_CROSSING)) && (diagonalLength * 0.85) < point_distance(last_corner, cv::Point2f(x, y))) {
             bool added_point = false;
             float meandistance = 0;
             //qDebug() << "PTP " << QString::number(point_to_point);
@@ -213,10 +225,8 @@ void camera_worker::diagonal_probeing(cv::Point2f start_corner, float diagonalLe
                     y = more_accurate_pix.y;
                     int harris_check_dimensions = 25;
                     bool field_checkb = true;
-                    if(x - harris_check_dimensions >= 0 && y - harris_check_dimensions >= 0 && x + harris_check_dimensions < threshold_image.cols && y + harris_check_dimensions < threshold_image.rows){
-                        cv::Rect rect(x - harris_check_dimensions, y - harris_check_dimensions, 2 * harris_check_dimensions, 2 * harris_check_dimensions);
-                        field_checkb = field_check(rect, cv::Point2f(x, y));
-                    }
+                    cv::Rect rect(x - harris_check_dimensions, y - harris_check_dimensions, 2 * harris_check_dimensions, 2 * harris_check_dimensions);
+                    field_checkb = field_check(rect, cv::Point2f(x, y));
                     if(!field_checkb){
                         o = 8;
                         continue;
@@ -294,8 +304,22 @@ cv::Point2f camera_worker::getsubPixel(cv::Point2f point)
     return cv::Point2f(x, y);
 }
 
+cv::Point2f camera_worker::mean_point(QList<cv::Point> points)
+{
+    cv::Point2f mean(0, 0);
+    for (cv::Point p : points) {
+        mean.x += p.x;
+        mean.y += p.y;
+    }
+    return mean / (points.length() * 1.0);
+}
+
 void camera_worker::harris_values(cv::Rect rect, QList<cv::Point> *edges)
 {
+    if(!rect_in_mat(threshold_image, rect)){
+        qDebug() << "Leaving Harris";
+        return;
+    }
     cv::Mat harris_mat = threshold_image(rect);
     //Val falsch
     cv::Mat harris(harris_mat.rows,harris_mat.cols, CV_MAKETYPE(CV_32FC1, 6));
@@ -309,6 +333,7 @@ void camera_worker::harris_values(cv::Rect rect, QList<cv::Point> *edges)
             double harris_val = l1 * l2 - 0.04 * pow(l1 + l2, 2);
             if(harris_val / dropout < 0){
                 cv::Point2f center_point(rect.tl().x + rect.width / 2.0, rect.tl().y + rect.height / 2.0);
+                //cv::circle(camera_image, cv::Point2f(rect.tl().x + x, rect.tl().y + y), 2, cv::Scalar(0, 0, 255), 1, cv::LINE_8);
                 float distance = point_distance(cv::Point2f(rect.tl().x + x, rect.tl().y + y), center_point);
                 if(distance <= 18 && distance >= 15){
                     if(edges){
@@ -326,6 +351,9 @@ bool camera_worker::field_check(cv::Rect rect, cv::Point2f p)
     QList<cv::Point> clusters[4];
     QList<cv::Point> edges;
     harris_values(rect, &edges);
+    if(edges.isEmpty()){
+        return false;
+    }
     for(cv::Point point : edges){
         int x = point.x;
         int y = point.y;
@@ -348,11 +376,13 @@ bool camera_worker::field_check(cv::Rect rect, cv::Point2f p)
         if(!clusters[i].isEmpty()){
             //qDebug() << "Rect " << i;
             rects[i] = cv::boundingRect(clusters[i].toVector().toStdVector()) + rect.tl();
-            cv::rectangle(camera_image, rects[i], cv::Scalar(0, 0, 255), 10, cv::LINE_8);
+            //cv::rectangle(camera_image, rects[i], cv::Scalar(0, 0, 255), 10, cv::LINE_8);
         }
     }
     int index_map[6][2] ={{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
     QList<QPair<int, cv::Point2f>> probemap;
+    //float scalar = 18;
+    float scalar = point_distance(p, cv::Point2f(p.x + edges.first().x, p.y + edges.first().y));
     for(int i = 0; i < 6; i++){
         int index_a = index_map[i][0];
         int index_b = index_map[i][1];
@@ -363,13 +393,12 @@ bool camera_worker::field_check(cv::Rect rect, cv::Point2f p)
             if(20 < angleuv && angleuv < 160){
                 cv::Point2f probing = u + v;
                 normalizeVec(&probing);
-                float scalar = 25;
                 //float scalar = 25;
                 QPair<int, cv::Point2f> pair(check_color(threshold_image, p.x + scalar *probing.x, p.y + scalar * probing.y), scalar * probing);
                 probemap.push_back(pair);
                 //qDebug() << "Angle " << QString::number(angleuv);
                 //qDebug() << "Probing Color " << check_color(threshold_image, p.x + scalar * probing.x, p.y + scalar * probing.y);
-                cv::circle(camera_image, p + scalar * probing, 5, cv::Scalar(255, 255, 255), 3, cv::LINE_8);
+                //cv::circle(camera_image, p + scalar * probing, 5, cv::Scalar(255, 255, 255), 3, cv::LINE_8);
             }
         }
     }
@@ -407,9 +436,9 @@ bool camera_worker::field_check(cv::Rect rect, cv::Point2f p)
         }
     }
     if(missmatch){
-        qDebug() << "Wong field setup!!!";
+        //qDebug() << "Wong field setup!!!";
     }
-    qDebug() << "Counter " << count_matches;
+    //qDebug() << "Counter " << count_matches;
     if(count_matches <= 1){
         return false;
     }
@@ -433,23 +462,40 @@ float camera_worker::intersection_NormalLine_NormalLine(cv::Point2f line_p1, cv:
     return r;
 }
 
+float camera_worker::distance_point_to_line(cv::Point2f lineA, cv::Point2f lineB, cv::Point2f p)
+{
+    float nomitor = abs((lineB.x - lineA.x) * (lineA.y - p.y) - (lineA.x - p.x) * (lineB.y - lineA.y));
+    float denomitor = qSqrt(pow(lineB.x - lineA.x, 2) + pow(lineB.y - lineA.y, 2));
+    return nomitor / denomitor;
+}
+
 int camera_worker::check_color(cv::Mat image, int x, int y)
 {
+    return check_color(image, cv::Point(x, y), COLOR_CHECK_AREA);
+}
+
+int camera_worker::check_color(cv::Mat image, cv::Point p, float area)
+{
     int sum = 0;
-    for(int i = -COLOR_CHECK_AREA; i <= COLOR_CHECK_AREA; i++){
-        for(int j = -COLOR_CHECK_AREA; j <= COLOR_CHECK_AREA; j++){
+    for(int i = -area; i <= area; i++){
+        for(int j = -area; j <= area; j++){
             if(i >= 0 && i < image.cols && j >= 0 && j < image.rows){
-                sum += image.at<uchar>(y, x);
+                sum += image.at<uchar>(p.y, p.x);
             }
         }
     }
-    if(sum < 0.05 * pow(COLOR_CHECK_AREA, 2) * 1){
+    if(sum < 0.05 * pow(area, 2) * 1){
         return 0;
-    }else if(sum > 0.95 * pow(COLOR_CHECK_AREA, 2) * 255){
+    }else if(sum > 0.95 * pow(area, 2) * 255){
         return 1;
     }else{
         return 2;
     }
+}
+
+int camera_worker::check_color(cv::Mat image, cv::Point p)
+{
+    return check_color(image, p.x, p.y);
 }
 
 bool camera_worker::is_zero(cv::Point2f p)
@@ -457,13 +503,91 @@ bool camera_worker::is_zero(cv::Point2f p)
     return (p.x == 0 && p.y == 0);
 }
 
+bool camera_worker::is_nan(cv::Point2f p)
+{
+    return isnan(p.x) || isnan(p.y);
+}
+
+bool camera_worker::point_in_mat(cv::Mat image, cv::Point2f p)
+{
+    return (p.x >= 0 && p.y >= 0 && p.x < image.cols && p.y < image.rows);
+}
+
+bool camera_worker::rect_in_mat(cv::Mat image, cv::Rect rect)
+{
+    return (point_in_mat(image, rect.tl()) && point_in_mat(image, rect.br()));
+}
+
+void camera_worker::find_center_points(cv::Point2f center_point, cv::Point2f direction, float length, contour_vector_t contours)
+{
+    cv::Point2f center_right_line = line_P2P(center_point, center_point + direction);
+    float length2 = normalizeVec(&center_right_line);
+    //cv::line(camera_image, center_point, center_point + center_right_line * r, cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+    QList<cv::Point> onLine;
+    for(size_t x = 0; x < contours.size(); x++){
+        for(size_t y = 0; y < contours[x].size(); y++){
+            if(5 > distance_point_to_line(center_point, center_point + center_right_line * 10 * length2, contours[x][y])){
+                onLine.push_back(contours[x][y]);
+            }
+        }
+    }
+    qDebug() << "On Line "<< onLine.length();
+    QList<cv::Point> merged_points;
+    while(!onLine.empty()){
+        cv::Point p = onLine.first();
+        if(onLine.empty()){
+            continue;
+        }
+        QList<cv::Point> cluster;
+        for(cv::Point point : onLine){
+            if(15 > point_distance(p, point)){
+                cluster.push_back(point);
+            }
+        }
+        for(cv::Point point : cluster){
+            onLine.removeAll(point);
+        }
+        merged_points.push_back(mean_point(cluster));
+    }
+    for(cv::Point p : merged_points){
+        //cv::circle(camera_image, p, 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+    }
+    for(cv::Point p : merged_points){
+        cv::Point minD1;
+        cv::Point minD2;
+        for(cv::Point p1 : merged_points){
+            if(p != p1){
+                float distance = point_distance(p, p1);
+                if((length * 1.1) > distance || distance > (length * 0.9)){
+                    minD1 = p1;
+                }else{
+                    if(((length * 1.1) > distance || distance > (length * 0.9)) && p1 != minD1){
+                        minD2 = p1;
+                    }
+                }
+            }
+        }
+        cv::Point center1 = p + ((p - minD1) / 2.0);
+        cv::Point center2 = (p - minD2);
+        int c1Color = check_color(threshold_image, center1, 25);
+        int c2Color = check_color(threshold_image, center2, 25);
+        if(c1Color != c2Color && c1Color != 2 && c2Color != 2){
+            cv::circle(camera_image, center1, 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+            //cv::circle(camera_image, center2, 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+            //cv::line(camera_image, minD1, p, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+            //cv::line(camera_image, minD2, p, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+        }
+    }
+}
+
 void camera_worker::check_texture(cv::Point2f start, cv::Point2f *resultA, cv::Point2f *resultB, cv::Point2f guideA, cv::Point2f guideB, cv::Point2f normalDiagonalA, cv::Point2f normalDiagonalB, cv::Point2f guideAB)
 {
     cv::Point2f probe_point = start;
-    int last_color = 2;
+    cv::Point2f old_probe_point;
+    cv::Point2f p2p_line;
     for(int i = 0; i < 8; i++){
         if(!is_zero(resultA[i]) && !is_zero(resultB[i])){
-            cv::Point2f p2p_line = line_P2P(resultA[i], resultB[i]);
+            p2p_line = line_P2P(resultA[i], resultB[i]);
             normalizeVec(&p2p_line);
             cv::Point2f normal_p2p_line(-p2p_line.y, p2p_line.x);
             if(angle(guideA, normal_p2p_line) > 7 || angle(guideB, normal_p2p_line) > 7){
@@ -479,33 +603,39 @@ void camera_worker::check_texture(cv::Point2f start, cv::Point2f *resultA, cv::P
             float r = intersection_NormalLine_NormalLine(probe_point, betterNormal, resultA[i], p2p_line);
             float r2 = intersection_NormalLine_NormalLine(probe_point, betterNormal, resultB[i], p2p_line);
             qDebug() << "LOl Ende";
-            cv::circle(camera_image, r * betterNormal + probe_point, 5, cv::Scalar(0, 0, 255), 4, cv::LINE_8);
-            cv::circle(camera_image, 2 * r * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
-            cv::circle(camera_image, 2 * r2 * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+            //cv::circle(camera_image, r * betterNormal + probe_point, 5, cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+            //cv::circle(camera_image, 2 * r * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+            //cv::circle(camera_image, 2 * r2 * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+            old_probe_point = probe_point;
             probe_point = 2 * r * betterNormal + probe_point;
-            continue;
+            goto CENTER_PROBE_POINT;
         }
         SINGLE_SIDE_CHECK:
         if(!is_zero(resultA[i])){
 
         }
+        OTHER_SIDE_CHECK:
         if(!is_zero(resultB[i])){
             cv::circle(camera_image, resultB[i], 5, cv::Scalar(0, 255, 0), 4);
             cv::Point2f normal_guideB(-guideB.y, guideB.x);
-            //cv::Point2f p2p_line = angled_vector_from_normal(normalDiagonalB, 170);
-            cv::Point2f p2p_line = guideAB;
+            cv::Point2f p2p_line = angled_vector_from_normal(normalDiagonalB, 170);
+            p2p_line = guideAB;
             cv::line(camera_image, resultB[i], resultB[i] + 70 * p2p_line, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
             normalizeVec(&p2p_line);
             cv::Point2f normal_p2p_line(-p2p_line.y, p2p_line.x);
             cv::line(camera_image, resultB[i], resultB[i] + 70 * normal_p2p_line, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
             cv::Point2f betterNormal(guideA.x + guideB.x + normal_p2p_line.x, guideA.y + guideB.y + normal_p2p_line.y);
             normalizeVec(&betterNormal);
+            if(is_nan(probe_point) || is_nan(betterNormal) || is_nan(resultB[i]) || is_nan(p2p_line)){
+                continue;
+            }
             print_vec(probe_point);
             print_vec(betterNormal);
             print_vec(resultB[i]);
             print_vec(p2p_line);
             float r = intersection_NormalLine_NormalLine(probe_point, betterNormal, resultB[i], p2p_line);
             cv::circle(camera_image, 2 * r * betterNormal + probe_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+            old_probe_point = probe_point;
             probe_point = 2 * r * betterNormal + probe_point;
             if(i > 0){
                 qDebug() << "Shift Probe";
@@ -520,23 +650,75 @@ void camera_worker::check_texture(cv::Point2f start, cv::Point2f *resultA, cv::P
                 cv::circle(camera_image, probe_point + betterNormal * (probe_distance - p2p_distance / 2), 5, cv::Scalar(0, 0, 255), 4, cv::LINE_8);
                 probe_point = probe_point + betterNormal * (probe_distance - p2p_distance / 2);
             }
-            int color_result = check_color(threshold_image, probe_point.x, probe_point.y);
-            if(color_result == last_color && last_color != 2){
-                qDebug() << "Two times Same Color -> Error Maybe Edge detected";
-                i = 8;
-            }
-            if(color_result == 1){
-                qDebug() << "White";
-            }else if(color_result == 0){
-                qDebug() << "Black";
-            }else{
-                qDebug() << "Undefined";
-            }
-            last_color = color_result;
-
+            goto CENTER_PROBE_POINT;
         }else {
             i = 8;
         }
+        CENTER_PROBE_POINT:
+        QList<cv::Point> topedges;
+        QList<cv::Point> bottomedges;
+        QList<cv::Point> leftedges;
+        QList<cv::Point> rightedges;
+        cv::Point2f normal = line_P2P(old_probe_point, probe_point);
+        float d = normalizeVec(&normal);
+        /*
+        cv::Point2f normal_normal(-normal.y, normal.x);
+        cv::Point2f top_point = probe_point + normal * (d / 2.0);
+        cv::Point2f bottom_point = probe_point - normal * (d / 2.0);
+        cv::Point2f left_point = probe_point - normal_normal * (d / 2.0);
+        cv::Point2f right_point = probe_point + normal_normal * (d / 2.0);
+        float scalar = d * 0.8;
+        while (topedges.empty()) {
+            cv::Rect rect(probe_point + normal * scalar, cv::Size(50, 50));
+            print_vec(rect.tl());
+            if(rect.tl().y < 0){
+                return;
+            }
+            qDebug() << "Top "<< topedges.length();
+            harris_values(rect, &topedges);
+            qDebug() << "Top "<< topedges.length();
+            scalar += 0.02;
+        }
+        float side_length = 10;
+        cv::Rect rectt(top_point.x - side_length, top_point.y - side_length, 2 * side_length, 2 * side_length);
+        cv::Rect rectb(bottom_point.x - side_length, bottom_point.y - side_length, 2 * side_length, 2 * side_length);
+        cv::Rect rectl(left_point.x - side_length, left_point.y - side_length, 2 * side_length, 2 * side_length);
+        cv::Rect rectr(right_point.x - side_length, right_point.y - side_length, 2 * side_length, 2 * side_length);
+        cv::rectangle(camera_image, rectt, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
+        cv::rectangle(camera_image, rectb, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
+        cv::rectangle(camera_image, rectl, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
+        cv::rectangle(camera_image, rectr, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
+        harris_values(rectt, &topedges);
+        harris_values(rectb, &bottomedges);
+        harris_values(rectl, &leftedges);
+        harris_values(rectr, &rightedges);
+        if(topedges.empty()){
+            qDebug() << "Top Empty";
+        }
+        if(bottomedges.empty()){
+            qDebug() << "Bottom Empty";
+        }
+        if(leftedges.empty()){
+            qDebug() << "Left Empty";
+        }
+        if(rightedges.empty()){
+            qDebug() << "Right Empty";
+        }
+        cv::Point2f meanTop = mean_point(topedges);
+        cv::Point2f meanBottom = mean_point(bottomedges);
+        cv::Point2f meanLeft = mean_point(leftedges);
+        cv::Point2f meanRight = mean_point(rightedges);
+        print_vec(meanBottom);
+        print_vec(meanLeft);
+        print_vec(meanRight);
+        print_vec(meanTop);
+        cv::circle(camera_image, meanTop, 7, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+        cv::circle(camera_image, meanBottom, 7, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+        cv::circle(camera_image, meanLeft, 7, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+        cv::circle(camera_image, meanRight, 7, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+        cv::Point2f real_center = intersection_P2PLine_P2PLine(meanTop, meanBottom, meanLeft, meanRight);
+        cv::circle(camera_image, real_center, 7, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+        */
     }
 }
 
@@ -630,6 +812,7 @@ void camera_worker::run()
                     }
                 }
             }else{
+                cv_camera.release();
                 cv_camera.open(new_cv_index);
             }
         }
@@ -641,8 +824,7 @@ void camera_worker::run()
             threshold_method_b = false;
             threshold_method = thresold_method_shared;
         }
-        if(capture_b && cv_camera.isOpened()){
-            cv_camera >> camera_image;
+        if(capture_b && cv_camera.isOpened() && cv_camera.read(camera_image)){
             if(camera_image.empty()){
                 qDebug() << "Image empty";
                 break;
@@ -769,28 +951,75 @@ void camera_worker::run()
                                 cv::Rect rect(x - harris_check_dimensions, y - harris_check_dimensions, 2 * harris_check_dimensions, 2 * harris_check_dimensions);
                                 field_check(rect, *b);
                             }
-                            /*
                             x = c->x;
                             y = c->y;
                             if(x - harris_check_dimensions >= 0 && y - harris_check_dimensions >= 0 && x + harris_check_dimensions < threshold_image.cols && y + harris_check_dimensions < threshold_image.rows){
                                 cv::Rect rect(x - harris_check_dimensions, y - harris_check_dimensions, 2 * harris_check_dimensions, 2 * harris_check_dimensions);
                                 field_check(rect, *c);
                             }
-                            */
                             bool is_black = threshold_image.at<uchar>(center_point.y, center_point.x) < threshold_value;
                             //qDebug() << "Is Black? " << is_black << " area " << check_color(threshold_image, center_point.x, center_point.y);
                             diagonal_probeing(*a, -lengthA, diagonalA, normalDiagonalA, tldiagonal, is_black);
                             diagonal_probeing(*b, -lengthB, diagonalB, normalDiagonalB, bldiagonal, is_black);
-                            //diagonal_probeing(*c, lengthB, diagonalB, normalDiagonalB, trdiagonal, is_black);
+                            diagonal_probeing(*c, lengthB, diagonalB, normalDiagonalB, trdiagonal, is_black);
                             diagonal_probeing(*d, lengthA, diagonalA, normalDiagonalA, brdiagonal, is_black);
+                            cv::Point2f maxTR;
                             for(int i = 0; i < 8; i++){
                                 for(int j = 0; j < 4; j++){
-                                    if(diagonalArray[j][i].x != 0 && diagonalArray[j][i].y != 0){
+                                    if(!is_zero(diagonalArray[j][i])){
+                                        if(j == 2){
+                                            maxTR = diagonalArray[j][i];
+                                        }
                                         counterArray[j]++;
                                     }
                                 }
                             }
 
+                            find_center_points(center_point, lineAC, lengthAC, contours);
+                            /*
+                            cv::Point2f center_right_line = line_P2P(center_point, center_point + lineAC);
+                            normalizeVec(&center_right_line);
+                            cv::Point2f top_down_line = line_P2P(maxTR, maxTR + lineCD);
+                            normalizeVec(&top_down_line);
+                            float r = intersection_NormalLine_NormalLine(center_point, center_right_line, maxTR, top_down_line);
+                            //cv::line(camera_image, center_point, center_point + center_right_line * r, cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+                            QList<cv::Point> onLine;
+                            for(size_t x = 0; x < contours.size(); x++){
+                                for(size_t y = 0; y < contours[x].size(); y++){
+                                    if(5 > distance_point_to_line(center_point, center_point + center_right_line * r, contours[x][y])){
+                                        onLine.push_back(contours[x][y]);
+                                    }
+                                }
+                            }
+                            qDebug() << "On Line "<< onLine.length();
+                            QList<cv::Point> merged_points;
+                            while(!onLine.empty()){
+                                cv::Point p = onLine.first();
+                                if(onLine.empty()){
+                                    continue;
+                                }
+                                QList<cv::Point> cluster;
+                                for(cv::Point point : onLine){
+                                    if(15 > point_distance(p, point)){
+                                        cluster.push_back(point);
+                                    }
+                                }
+                                for(cv::Point point : cluster){
+                                    onLine.removeAll(point);
+                                }
+                                merged_points.push_back(mean_point(cluster));
+                            }
+                            for(cv::Point p : merged_points){
+                                cv::circle(camera_image, p, 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                            }
+
+                            */
+
+                            qDebug() << counterArray[COUNTER_TL] << " corners TL";
+                            qDebug() << counterArray[COUNTER_TR] << " corners TR";
+                            qDebug() << counterArray[COUNTER_BL] << " corners BL";
+                            qDebug() << counterArray[COUNTER_BR] << " corners BR";
+                            qDebug() << "";
                             //check_texture(center_point, tldiagonal, trdiagonal, lineAB, lineCD, normalDiagonalA, normalDiagonalB, lineAC);
                             //check_texture(center_point - lineAC, tldiagonal, trdiagonal, lineAB, lineCD, normalDiagonalA, normalDiagonalB, lineAC);
                             //check_texture(center_point, trdiagonal, brdiagonal, lineAC, lineBD, normalDiagonalA, normalDiagonalB, lineCD);

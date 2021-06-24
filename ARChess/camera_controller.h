@@ -154,6 +154,8 @@ public:
     double angle(cv::Point a, cv::Point2f b);
     double angle(cv::Point2f a, cv::Point2f b);
     float point_distance(cv::Point a, cv::Point b);
+    float point_distance(cv::Point2f a, cv::Point b);
+    float point_distance(cv::Point a, cv::Point2f b);
     float point_distance(cv::Point2f a, cv::Point2f b);
     int get_ordered_points(cv::Rect rect, std::vector<cv::Point> points);
     void diagonal_probeing(cv::Point2f start_corner, float diagonalLength, cv::Point2f diagonalNormalized, cv::Point2f diagonalNormalVec, cv::Point2f *result_array, bool is_black);
@@ -161,11 +163,19 @@ public:
     cv::Point2f line_P2P(cv::Point2f p1, cv::Point2f p2);
     cv::Point2f angled_vector_from_normal(cv::Point2f normal, float angle_deg);
     cv::Point2f getsubPixel(cv::Point2f point);
+    cv::Point2f mean_point(QList<cv::Point> points);
     void harris_values(cv::Rect rect, QList<cv::Point> *edges);
     bool field_check(cv::Rect rect, cv::Point2f p);
     float intersection_NormalLine_NormalLine(cv::Point2f line_p1, cv::Point2f line_n1, cv::Point2f line_p2, cv::Point2f line_n2);
+    float distance_point_to_line(cv::Point2f lineA, cv::Point2f lineB, cv::Point2f p);
     int check_color(cv::Mat image, int x, int y);
+    int check_color(cv::Mat image, cv::Point p, float area);
+    int check_color(cv::Mat image, cv::Point p);
     bool is_zero(cv::Point2f p);
+    bool is_nan(cv::Point2f p);
+    bool point_in_mat(cv::Mat image, cv::Point2f p);
+    bool rect_in_mat(cv::Mat image, cv::Rect rect);
+    void find_center_points(cv::Point2f center_point, cv::Point2f direction, float length, contour_vector_t contours);
     void check_texture(cv::Point2f start, cv::Point2f *resultA, cv::Point2f *resultB, cv::Point2f guideA, cv::Point2f guideB, cv::Point2f normalDiagonalA, cv::Point2f normalDiagonalB, cv::Point2f guideAB);
     void print_vec(cv::Point2f p);
     bool running;
