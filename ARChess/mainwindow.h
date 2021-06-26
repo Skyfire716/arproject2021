@@ -27,7 +27,9 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-const QString EXAMPLE_VIDEO = "Video";
+const QString EXAMPLE_VIDEO = "Video Hard";
+const QString EXAMPLE_VIDEO_STABEL = "Video Stabel";
+const QString EXAMPLE_VIDEO_MOVING = "Video Moving";
 
 public:
     MainWindow(QWidget *parent = nullptr);

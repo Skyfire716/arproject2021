@@ -91,6 +91,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     planeEntity->addComponent(planeTransform);
     planeEntity->addComponent(backgroundLayer);
 
+    /*
     Qt3DCore::QEntity *monkeyEntity = new Qt3DCore::QEntity(rootEntity);
     Qt3DRender::QMesh *monkeyMesh = new Qt3DRender::QMesh();
     monkeyMesh->setSource(QUrl("qrc:/models/resources/models/monkey.stl"));
@@ -107,7 +108,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     monkeyEntity->addComponent(monkeyTransform);
     monkeyEntity->addComponent(material);
     monkeyEntity->addComponent(objectsLayer);
-
+*/
     m_3d_window_container = QWidget::createWindowContainer(m_3d_window);
     m_3d_window_container->setGeometry(this->geometry());
     m_3d_window_container->setParent(this);

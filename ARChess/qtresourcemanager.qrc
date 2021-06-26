@@ -1,6 +1,8 @@
 <RCC>
     <qresource prefix="/videos">
         <file>resources/videos/VID_20210603_121318.mp4</file>
+        <file>resources/videos/stabel_chessboard.mp4</file>
+        <file>resources/videos/moving_chessboard.mp4</file>
     </qresource>
     <qresource prefix="/images">
         <file>resources/images/IMG_20210603_121158.jpg</file>

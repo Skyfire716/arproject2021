@@ -36,12 +36,15 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();
+    camera_box->addItem(EXAMPLE_VIDEO_STABEL);
+    camera_box->addItem(EXAMPLE_VIDEO_MOVING);
     camera_box->addItem(EXAMPLE_VIDEO);
     threshold_method_box->insertItem(0, "Thresh_Binary");
     threshold_method_box->insertItem(1, "Thresh_Binary_Inv");
     threshold_method_box->insertItem(2, "Thresh_Trunc");
     threshold_method_box->insertItem(3, "Thresh_ToZero");
     threshold_method_box->insertItem(4, "Thresh_ToZero_Inv");
+    threshold_method_box->insertItem(5, "Adaptive");
     threshold_method_box->setCurrentIndex(0);
     result_image_picker->insertItem(0, "Camera Image");
     result_image_picker->insertItem(1, "Gray Image");
@@ -50,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
     cam_control->worker->change_threshold_method(0);
     cam_control->worker->change_threshold(threshold_slider->value());
     //Individual Values for testing Today
-    threshold_slider->setValue(110);
+    threshold_slider->setValue(140);
 }
 
 MainWindow::~MainWindow()
@@ -73,6 +76,10 @@ void MainWindow::on_camera_combbox_currentIndexChanged(int index)
     int cv_index = 0;
     if(cam_name.contains(EXAMPLE_VIDEO)){
         cv_index = -1;
+    }else if(cam_name.contains(EXAMPLE_VIDEO_STABEL)){
+        cv_index = -2;
+    }else if(cam_name.contains(EXAMPLE_VIDEO_MOVING)){
+        cv_index = -3;
     }else{
         cv_index = cam_name.remove("Camera ", Qt::CaseInsensitive).toInt();
     }

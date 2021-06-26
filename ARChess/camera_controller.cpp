@@ -122,6 +122,170 @@ int camera_worker::get_ordered_points(cv::Rect rect, std::vector<cv::Point> poin
     return (index_a * 1000 + index_b * 100 + index_c * 10 + index_d);
 }
 
+bool camera_worker::rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos)
+{
+    QSet<QPair<int, int>> knonw_pos;
+    for(QPair<QVector2D, bool> pair : chessboard){
+        QPair<int, int> koords((int)pair.first.x(), (int)pair.first.y());
+        knonw_pos.insert(koords);
+        if(pair.first == current_pos){
+            return true;
+        }
+    }
+    cv::Point2f center_point = intersection_P2PLine_P2PLine(tl, br, tr, bl);
+    cv::Point2f lineAC = line_P2P(tl, tr);
+    cv::Point2f lineAB = line_P2P(tl, bl);
+    cv::Point2f lineCD = line_P2P(tr, br);
+    cv::Point2f lineBD = line_P2P(bl, br);
+    float lengthAC = normalizeVec(&lineAC);
+    float lengthAB = normalizeVec(&lineAB);
+    float lengthCD = normalizeVec(&lineCD);
+    float lengthBD = normalizeVec(&lineBD);
+    cv::Point2f normalLineAC(-lineAC.y, lineAC.x);
+    cv::Point2f normalLineAB(-lineAB.y, lineAB.x);
+    cv::Point2f normalLineCD(-lineCD.y, lineCD.x);
+    cv::Point2f normalLineBD(-lineBD.y, lineBD.x);
+    cv::Point2f tldiagonal[8];
+    cv::Point2f trdiagonal[8];
+    cv::Point2f bldiagonal[8];
+    cv::Point2f brdiagonal[8];
+    cv::Point2f atdiagonal[8];
+    cv::Point2f aldiagonal[8];
+    cv::Point2f blediagonal[8];
+    cv::Point2f bbdiagonal[8];
+    cv::Point2f ctdiagonal[8];
+    cv::Point2f crdiagonal[8];
+    cv::Point2f dbdiagonal[8];
+    cv::Point2f drdiagonal[8];
+    cv::Point2f *diagonalArray[12] = {tldiagonal, bldiagonal, trdiagonal, brdiagonal, atdiagonal, aldiagonal, blediagonal, bbdiagonal, ctdiagonal, crdiagonal, drdiagonal, dbdiagonal};
+    for(int i = 0; i < 8; i++){
+        for(int j = 0; j < 12; j++){
+            diagonalArray[j][i].x = 0;
+            diagonalArray[j][i].y = 0;
+        }
+    }
+    line_probeing(tl, -lengthAB, lineAB, normalLineAB, atdiagonal);
+    line_probeing(tl, -lengthAC, lineAC, normalLineAC, aldiagonal);
+    line_probeing(bl, -lengthBD, lineBD, normalLineBD, blediagonal);
+    line_probeing(bl, lengthAB, lineAB, normalLineAB, bbdiagonal);
+    line_probeing(tr, -lengthCD, lineCD, normalLineCD, ctdiagonal);
+    line_probeing(tr, lengthAC, lineAC, normalLineAC, crdiagonal);
+    line_probeing(br, lengthBD, lineBD, normalLineBD, drdiagonal);
+    line_probeing(br, lengthCD, lineCD, normalLineCD, dbdiagonal);
+    int maxtop = 0;
+    int maxbottom = 0;
+    int maxleft = 0;
+    int maxright = 0;
+    center_probing(atdiagonal, ctdiagonal, center_point, &maxtop);
+    //cv::line(camera_image, atdiagonal[maxtop], ctdiagonal[maxtop], cv::Scalar(0, 0, 255), 7, cv::LINE_8);
+    center_probing(bbdiagonal, dbdiagonal, center_point, &maxbottom);
+    //cv::line(camera_image, bbdiagonal[maxbottom], dbdiagonal[maxbottom], cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+    center_probing(aldiagonal, blediagonal, center_point, &maxleft);
+    //cv::line(camera_image, aldiagonal[maxleft], blediagonal[maxleft], cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+    center_probing(crdiagonal, drdiagonal, center_point, &maxright);
+    //cv::line(camera_image, crdiagonal[maxright], drdiagonal[maxright], cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+    diagonal_center_probing(ctdiagonal, maxtop, crdiagonal, maxright, trdiagonal);
+    if(4 <= maxtop + maxbottom + maxleft + maxright){
+        QPair<QVector2D, bool> pair(current_pos, check_color(threshold_image, center_point));
+        chessboard.push_back(pair);
+        for(int i = 1; i < maxtop; i++){
+            QVector2D koord = current_pos + QVector2D(0, i);
+            QPair<int, int> koordpair((int)koord.x(), (int)koord.y());
+            if(!knonw_pos.contains(koordpair)){
+                rect_probing(atdiagonal[i], atdiagonal[i+1], ctdiagonal[i], ctdiagonal[i - 1], koord);
+            }
+        }
+        for(int i = 1; i < maxbottom; i++){
+            QVector2D koord = current_pos + QVector2D(0, -i);
+            QPair<int, int> koordpair((int)koord.x(), (int)koord.y());
+            if(!knonw_pos.contains(koordpair)){
+                rect_probing(bbdiagonal[i], bbdiagonal[i+1], dbdiagonal[i], dbdiagonal[i - 1], koord);
+            }
+        }
+        for(int i = 1; i < maxleft; i++){
+            QVector2D koord = current_pos + QVector2D(-i, 0);
+            QPair<int, int> koordpair((int)koord.x(), (int)koord.y());
+            if(!knonw_pos.contains(koordpair)){
+                rect_probing(aldiagonal[i], blediagonal[i], aldiagonal[i - 1], blediagonal[i - 1], koord);
+            }
+        }
+        for(int i = 1; i < maxright; i++){
+            QVector2D koord = current_pos + QVector2D(i, 0);
+            QPair<int, int> koordpair((int)koord.x(), (int)koord.y());
+            if(!knonw_pos.contains(koordpair)){
+                rect_probing(crdiagonal[i - 1], drdiagonal[i - 1], crdiagonal[i], drdiagonal[i], koord);
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+void camera_worker::line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized, cv::Point2f *result_array)
+{
+    int sign = 1;
+    if(line_length < 0){
+        sign = -1;
+        line_length = abs(line_length);
+    }
+    //cv::circle(camera_image, start_corner, 10, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+    float adopted_diagonal_length = line_length;
+    float radius = 0;
+    cv::Point2f pix1 = start_corner;
+    cv::Point2f pix2;
+    for(int i = 0; i < 8; i++){
+        result_array[i] = pix1;
+        pix2 = getsubPixel(pix1 + sign * adopted_diagonal_length * line_normalized_vec);
+        //cv::circle(camera_image, pix2, 4, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
+        adopted_diagonal_length = point_distance(pix1, pix2);
+        //cv::line(camera_image, pix2, pix2 + sign * adopted_diagonal_length * line_normalized_vec, cv::Scalar(0, 0, 255), 5, cv::LINE_8);
+        radius = adopted_diagonal_length * (1.0 + LENGTH_VARYING_PERCENTAGE) - adopted_diagonal_length;
+        //cv::circle(camera_image, pix2 + sign * adopted_diagonal_length * line_normalized_vec, radius, cv::Scalar(0, 255, 0), 3, cv::LINE_8);
+        pix1 = pix2;
+    }
+}
+
+void camera_worker::center_probing(cv::Point2f *guideA, cv::Point2f *guideB, cv::Point2f center, int *max_valid_index)
+{
+    cv::Point2f first_center = center;
+    for(int i = 0; i < 8; i++){
+        if(is_zero(guideA[i]) || is_zero(guideA[i+1]) || is_zero(guideB[i]) || is_zero(guideB[i+1])){
+            i = 8;
+            continue;
+        }
+        cv::Point2f diagA = line_P2P(guideA[i], guideB[i+1]);
+        cv::Point2f diagB = line_P2P(guideB[i], guideA[i+1]);
+        float lengthA = normalizeVec(&diagA);
+        float lengthB = normalizeVec(&diagB);
+        cv::Point2f second_center = intersection_P2PLine_P2PLine(guideA[i], guideB[i+1], guideB[i], guideA[i+1]);
+        //cv::circle(camera_image, second_center, 5, cv::Scalar(0, 255, 0), 3, cv::LINE_8);
+        int first_color = check_color(threshold_image, first_center);
+        int second_color = check_color(threshold_image, second_center);
+        for(int j = 1; j < 3; j++){
+            second_color += check_color(threshold_image, guideA[i] + j * (lengthA / 3.0) * diagA);
+            second_color += check_color(threshold_image, guideB[i] + j * (lengthB / 3.0) * diagB);
+            //cv::circle(camera_image, guideA[i] + j * (lengthA / 3.0) * diagA, 5, cv::Scalar(0, 255, 0), 3, cv::LINE_8);
+            //cv::circle(camera_image, guideB[i] + j * (lengthB / 3.0) * diagB, 5, cv::Scalar(0, 255, 0), 3, cv::LINE_8);
+        }
+        if(!(second_color == 0 || second_color == 5) ||first_color == (second_color / 5) || first_color == 2 || second_color == 2){
+            //qDebug() << "Neighbour fields same Color Aborting!";
+            *max_valid_index = i;
+            i = 8;
+            continue;
+        }
+        *max_valid_index = i + 1;
+        first_center = second_center;
+    }
+}
+
+void camera_worker::diagonal_center_probing(cv::Point2f *guideA, int maxA, cv::Point2f *guideB, int maxB, cv::Point2f *diagonal)
+{
+    for(int i = 1; i < qMin(maxA, maxB); i++){
+        cv::Point2f second_center = intersection_P2PLine_P2PLine(guideA[i], guideB[i], guideA[i-1], diagonal[i]);
+        cv::circle(camera_image, second_center, 5, cv::Scalar(0, 255, 0), 3, cv::LINE_8);
+    }
+}
+
 void camera_worker::diagonal_probeing(cv::Point2f start_corner, float diagonalLength, cv::Point2f diagonalNormalized, cv::Point2f diagonalNormalVec, cv::Point2f *result_array, bool is_black)
 {
     int sign = 1;
@@ -143,6 +307,7 @@ void camera_worker::diagonal_probeing(cv::Point2f start_corner, float diagonalLe
     int point_to_point = 0;
     int black_counter = 0;
     int white_counter = 0;
+    float adopted_diagonal_length = diagonalLength;
     for(int i = 0; i < (int)(8 * diagonalLength); i++){
         int value = 0;
         //qDebug() << "Value";
@@ -197,7 +362,48 @@ void camera_worker::diagonal_probeing(cv::Point2f start_corner, float diagonalLe
             //qDebug() << "BLACK CROSSING " << (value < BLACK_FIELD_CROSSING);
         }
         //qDebug() << "DISTANCE " << (50 < point_distance(last_corner, cv::Point2f(corner.x + sign * i * diagonalNormalized.x, corner.y + sign * i * diagonalNormalized.y)));
-        if(((!is_black && value < BLACK_FIELD_CROSSING) || (is_black && value > WHITE_FIELD_CROSSING)) && (diagonalLength * 0.85) < point_distance(last_corner, cv::Point2f(x, y))) {
+        float d = point_distance(last_corner, cv::Point2f(x, y));
+        adopted_diagonal_length = d;
+        /*
+        std::vector<cv::Point> circle;
+        for(int i = 0; i < 30; i++){
+            float angleF = qDegreesToRadians(i * (360.0 / i));
+            circle.push_back(cv::Point(x + qSin(angleF) * adopted_diagonal_length, y + qCos(angleF) * adopted_diagonal_length));
+            print_vec(circle.at(i));
+        }
+        cv::Rect bo = cv::boundingRect(circle);
+        QList<QPair<cv::Point, double>> corners;
+        harris_corner(bo, &corners);
+        QPair<cv::Point, double> high;
+        for(QPair<cv::Point, double> pairs : corners){
+            if(point_distance(cv::Point(x, y), pairs.first) < adopted_diagonal_length){
+                if(high.second < pairs.second){
+                    high = pairs;
+                }
+            }
+        }
+        cv::circle(camera_image, cv::Point(x, y) + high.first, 5, cv::Scalar(0, 255, 0), 3, cv::LINE_8);
+        corners.clear();
+        */
+        bool corner_bool = false;
+        //if((diagonalLength * 0.85) < d && (diagonalLength * 1.15) > d && !((!is_black && value < BLACK_FIELD_CROSSING) || (is_black && value > WHITE_FIELD_CROSSING))){
+        if((diagonalLength * (1.0 - LENGTH_VARYING_PERCENTAGE)) < d && (diagonalLength * (1.0 + LENGTH_VARYING_PERCENTAGE)) > d){
+            QList<QPair<cv::Point, double>> corners;
+            cv::Rect rect(x - 10, y - 10, 20, 20);
+            harris_corner(rect, &corners);
+            if(!corners.empty()){
+                //cv::putText(camera_image, "CORNERS", cv::Point(x, y), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+                corner_bool = true;
+                QPair<cv::Point, double> highest;
+                for(QPair<cv::Point, double> pair : corners){
+                    if(pair.second > highest.second){
+                        highest = pair;
+                    }
+                }
+                //cv::circle(camera_image, cv::Point(x, y) + highest.first, 5, cv::Scalar(0, 255, 0), 3, cv::LINE_8);
+            }
+        }
+        if((diagonalLength * 0.85) < d && (diagonalLength * 1.15) > d && ((!is_black && value < BLACK_FIELD_CROSSING) || (is_black && value > WHITE_FIELD_CROSSING) || corner_bool)) {
             bool added_point = false;
             float meandistance = 0;
             //qDebug() << "PTP " << QString::number(point_to_point);
@@ -205,12 +411,14 @@ void camera_worker::diagonal_probeing(cv::Point2f start_corner, float diagonalLe
             int color_between_result = check_color(threshold_image, last_corner.x + last_to_now.x / 2, last_corner.y + last_to_now.y / 2);
             if(color_between_result == 2){
                 qDebug() << "Undefined Color Abort";
+                cv::putText(camera_image, "C", cv::Point(x, y), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 0, 255), 2);
                 break;
             }
             //qDebug() << "Color " << color_between_result << " isBlack " << is_black;
             for(int o = 0; o < 8; o++){
-                if(is_zero(result_array[o]) && ((is_black && point_to_point < BLACK_FIELD_SUM) || (!is_black && point_to_point > WHITE_FIELD_SUM)) &&
-                        (o == 0 || is_zero(last_corner) || ((is_black && color_between_result == 0) || (!is_black && color_between_result == 1)))){
+                //if(is_zero(result_array[o]) && ((is_black && point_to_point < BLACK_FIELD_SUM) || (!is_black && point_to_point > WHITE_FIELD_SUM)) &&
+                //        (o == 0 || is_zero(last_corner) || ((is_black && color_between_result == 0) || (!is_black && color_between_result == 1)))){
+                if(is_zero(result_array[o]) && o != 0){
                     if(o == 2){
                         //i = 8 * diagonalLength;
                     }
@@ -227,10 +435,14 @@ void camera_worker::diagonal_probeing(cv::Point2f start_corner, float diagonalLe
                     bool field_checkb = true;
                     cv::Rect rect(x - harris_check_dimensions, y - harris_check_dimensions, 2 * harris_check_dimensions, 2 * harris_check_dimensions);
                     field_checkb = field_check(rect, cv::Point2f(x, y));
+                    /*
                     if(!field_checkb){
+                        qDebug() << "Field Check Failed";
+                        cv::putText(camera_image, "FC", cv::Point(x, y), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 0, 255), 2);
                         o = 8;
                         continue;
                     }
+                    */
                     cv::circle(camera_image, cv::Point(x, y), 10, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
                     //qDebug() << "To Big TR " << QString::number(value) << " i " << QString::number(i%((int)(8*diagonalLength))) << " d to last " << QString::number(point_distance(last_corner, cv::Point2f(x, y)));
                     bool contains = false;
@@ -251,6 +463,10 @@ void camera_worker::diagonal_probeing(cv::Point2f start_corner, float diagonalLe
                     added_point = true;
                     o = 8;
                 }else{
+                    /*
+                    ((is_black && point_to_point < BLACK_FIELD_SUM) || (!is_black && point_to_point > WHITE_FIELD_SUM)) &&
+                                            (o == 0 || is_zero(last_corner) || ((is_black && color_between_result == 0) || (!is_black && color_between_result == 1)))
+                    */
                     if(o > 0){
                         meandistance += abs(point_distance(result_array[o], result_array[o-1]));
                     }
@@ -258,6 +474,39 @@ void camera_worker::diagonal_probeing(cv::Point2f start_corner, float diagonalLe
             }
             if(!added_point){
                 i = (int)(8 * diagonalLength);
+            }
+        }else{
+            if(!(!is_black && value < BLACK_FIELD_CROSSING)){
+                QString n = "BFC ";
+                n.append(QString::number(value));
+                //cv::putText(camera_image, n.toStdString(), cv::Point(x, y), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 0, 255), 2);
+                //qDebug() << "Value " << QString::number(value);
+                /*
+                QList<cv::Point> corners;
+                cv::Rect rect(x - 5, y - 5, 10, 10);
+                harris_corner(rect, &corners);
+                if(!corners.empty()){
+                    cv::putText(camera_image, "CORNERS", cv::Point(x, y), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+                }
+                */
+            }
+            if(!(is_black && value > WHITE_FIELD_CROSSING)){
+                QString n = "WFC ";
+                n.append(QString::number(value));
+                //cv::putText(camera_image, n.toStdString(), cv::Point(x, y), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 0, 255), 2);
+                /*
+                QList<cv::Point> corners;
+                cv::Rect rect(x - 5, y - 5, 10, 10);
+                harris_corner(rect, &corners);
+                if(!corners.empty()){
+                    cv::putText(camera_image, "CORNERS", cv::Point(x, y), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+                }
+                */
+            }
+            if(!((diagonalLength * 0.85) < d)){
+                //cv::putText(camera_image, "D<", cv::Point(x, y), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 0, 255), 2);
+            }else if(!((diagonalLength * 1.15) > d)){
+                //cv::putText(camera_image, "D>", cv::Point(x, y), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 0, 255), 2);
             }
         }
     }
@@ -314,7 +563,7 @@ cv::Point2f camera_worker::mean_point(QList<cv::Point> points)
     return mean / (points.length() * 1.0);
 }
 
-void camera_worker::harris_values(cv::Rect rect, QList<cv::Point> *edges)
+void camera_worker::harris_values(cv::Rect rect, QList<QPair<cv::Point, double> > *harris_features)
 {
     if(!rect_in_mat(threshold_image, rect)){
         qDebug() << "Leaving Harris";
@@ -324,24 +573,66 @@ void camera_worker::harris_values(cv::Rect rect, QList<cv::Point> *edges)
     //Val falsch
     cv::Mat harris(harris_mat.rows,harris_mat.cols, CV_MAKETYPE(CV_32FC1, 6));
     cv::cornerEigenValsAndVecs(harris_mat, harris, 3, 3);
-    int dropout = 10000;
     for(int x = 0; x < harris.cols; x++){
         for(int y = 0; y < harris.rows; y++){
             cv::Vec6f vals = harris.at<cv::Vec6f>(y, x);
             float l1 = vals[0];
             float l2 = vals[1];
             double harris_val = l1 * l2 - 0.04 * pow(l1 + l2, 2);
-            if(harris_val / dropout < 0){
-                cv::Point2f center_point(rect.tl().x + rect.width / 2.0, rect.tl().y + rect.height / 2.0);
-                //cv::circle(camera_image, cv::Point2f(rect.tl().x + x, rect.tl().y + y), 2, cv::Scalar(0, 0, 255), 1, cv::LINE_8);
-                float distance = point_distance(cv::Point2f(rect.tl().x + x, rect.tl().y + y), center_point);
-                if(distance <= 18 && distance >= 15){
-                    if(edges){
-                        edges->push_back(cv::Point(x, y));
-                    }
+            if(harris_val / HARRIS_DROPOUT < 0 || harris_val / HARRIS_DROPOUT > 0){
+                QPair<cv::Point, double> p(cv::Point(x, y), harris_val);
+                harris_features->push_back(p);
+            }
+        }
+    }
+}
+
+void camera_worker::harris_edges(cv::Rect rect, QList<cv::Point> *edges)
+{
+    QList<QPair<cv::Point, double>> harris_features;
+    harris_values(rect, &harris_features);
+    for(QPair<cv::Point, double> pair : harris_features){
+        if(pair.second / HARRIS_DROPOUT < 0){
+            int x = pair.first.x;
+            int y = pair.first.y;
+            cv::Point2f center_point(rect.tl().x + rect.width / 2.0, rect.tl().y + rect.height / 2.0);
+            //cv::circle(camera_image, cv::Point2f(rect.tl().x + x, rect.tl().y + y), 2, cv::Scalar(0, 0, 255), 1, cv::LINE_8);
+            float distance = point_distance(cv::Point2f(rect.tl().x + x, rect.tl().y + y), center_point);
+            if(distance <= 18 && distance >= 15){
+                if(edges){
+                    edges->push_back(pair.first);
                 }
             }
         }
+    }
+}
+
+void camera_worker::harris_corner(cv::Rect rect, QList<cv::Point> *corners)
+{
+    QList<QPair<cv::Point, double>> harris_features;
+    harris_corner(rect, &harris_features);
+    for(QPair<cv::Point, double> pair : harris_features){
+        corners->append(pair.first);
+    }
+}
+
+void camera_worker::harris_corner(cv::Rect rect, QList<QPair<cv::Point, double> > *corners)
+{
+    QList<QPair<cv::Point, double>> harris_features;
+    harris_values(rect, &harris_features);
+    for(QPair<cv::Point, double> pair : harris_features){
+         if(pair.second / HARRIS_DROPOUT > 0){
+             int x = pair.first.x;
+             int y = pair.first.y;
+             cv::Point2f center_point(rect.tl().x + rect.width / 2.0, rect.tl().y + rect.height / 2.0);
+             //cv::circle(camera_image, cv::Point2f(rect.tl().x + x, rect.tl().y + y), 2, cv::Scalar(0, 0, 255), 1, cv::LINE_8);
+             float distance = point_distance(cv::Point2f(rect.tl().x + x, rect.tl().y + y), center_point);
+             if(distance <= 18){
+                 if(corners){
+                     corners->push_back(pair);
+                 }
+             }
+         }
     }
 }
 
@@ -350,7 +641,7 @@ bool camera_worker::field_check(cv::Rect rect, cv::Point2f p)
     cv::Rect rects[4];
     QList<cv::Point> clusters[4];
     QList<cv::Point> edges;
-    harris_values(rect, &edges);
+    harris_edges(rect, &edges);
     if(edges.isEmpty()){
         return false;
     }
@@ -476,6 +767,10 @@ int camera_worker::check_color(cv::Mat image, int x, int y)
 
 int camera_worker::check_color(cv::Mat image, cv::Point p, float area)
 {
+    cv::Rect rect(p.x - area, p.y - area, 2*area, 2*area);
+    if(!rect_in_mat(image, rect)){
+        return 2;
+    }
     int sum = 0;
     for(int i = -area; i <= area; i++){
         for(int j = -area; j <= area; j++){
@@ -800,15 +1095,32 @@ void camera_worker::run()
         }
         if(switch_camera_b){
             switch_camera_b = false;
-            if(new_cv_index == -1){
+            if(new_cv_index < 0){
                 qDebug() << "Load from File";
                 //TODO Check here if you get an error on non linux systems
                 QTemporaryDir tempDir;
                 if(tempDir.isValid()){
-                    const QString tempFile = tempDir.path() +  "/archess.mp4";
-                    if(QFile::copy(":/videos/resources/videos/VID_20210603_121318.mp4", tempFile)){
+                    QString filename = "";
+                    QString loading_file = "";
+                    switch (new_cv_index) {
+                    case -1: filename.append("/archess_hard.mp4");
+                        loading_file.append(":/videos/resources/videos/VID_20210603_121318.mp4");
+                        threshold_value = 68;
+                        break;
+                    case -2: filename.append("/archess_stabel.mp4");
+                        loading_file.append(":/videos/resources/videos/stabel_chessboard.mp4");
+                        threshold_value = 140;
+                        break;
+                    case -3:
+                        filename.append("/archess_moving.mp4");
+                        loading_file.append(":/videos/resources/videos/moving_chessboard.mp4");
+                        threshold_value = 140;
+                        break;
+                    }
+                    const QString tempFile = tempDir.path() +  filename;
+                    if(QFile::copy(loading_file, tempFile)){
                         qDebug() << "Mp4 " << tempFile;
-                        cv_camera.open(tempFile.toStdString());
+                        qDebug() << "Open? " << cv_camera.open(tempFile.toStdString());
                     }
                 }
             }else{
@@ -833,7 +1145,11 @@ void camera_worker::run()
              * DO OpenCV Operations here
              **/
             cv::cvtColor(camera_image, gray_image, CV_BGR2GRAY);
-            cv::threshold(gray_image, threshold_image, threshold_value, 255, threshold_method);
+            if(threshold_method == 5){
+                cv::adaptiveThreshold(gray_image, threshold_image, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 33, 5);
+            }else{
+                cv::threshold(gray_image, threshold_image, threshold_value, 255, threshold_method);
+            }
             contour_vector_t contours;
             cv::findContours(threshold_image, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
             std::vector<cv::Rect> boundingRects(contours.size());
@@ -924,9 +1240,17 @@ void camera_worker::run()
                             cv::Point2f trdiagonal[8];
                             cv::Point2f bldiagonal[8];
                             cv::Point2f brdiagonal[8];
-                            cv::Point2f *diagonalArray[4] = {tldiagonal, bldiagonal, trdiagonal, brdiagonal};
+                            cv::Point2f atdiagonal[8];
+                            cv::Point2f aldiagonal[8];
+                            cv::Point2f blediagonal[8];
+                            cv::Point2f bbdiagonal[8];
+                            cv::Point2f ctdiagonal[8];
+                            cv::Point2f crdiagonal[8];
+                            cv::Point2f dbdiagonal[8];
+                            cv::Point2f drdiagonal[8];
+                            cv::Point2f *diagonalArray[12] = {tldiagonal, bldiagonal, trdiagonal, brdiagonal, atdiagonal, aldiagonal, blediagonal, bbdiagonal, ctdiagonal, crdiagonal, drdiagonal, dbdiagonal};
                             for(int i = 0; i < 8; i++){
-                                for(int j = 0; j < 4; j++){
+                                for(int j = 0; j < 12; j++){
                                     diagonalArray[j][i].x = 0;
                                     diagonalArray[j][i].y = 0;
                                 }
@@ -957,12 +1281,57 @@ void camera_worker::run()
                                 cv::Rect rect(x - harris_check_dimensions, y - harris_check_dimensions, 2 * harris_check_dimensions, 2 * harris_check_dimensions);
                                 field_check(rect, *c);
                             }
-                            bool is_black = threshold_image.at<uchar>(center_point.y, center_point.x) < threshold_value;
-                            //qDebug() << "Is Black? " << is_black << " area " << check_color(threshold_image, center_point.x, center_point.y);
-                            diagonal_probeing(*a, -lengthA, diagonalA, normalDiagonalA, tldiagonal, is_black);
-                            diagonal_probeing(*b, -lengthB, diagonalB, normalDiagonalB, bldiagonal, is_black);
-                            diagonal_probeing(*c, lengthB, diagonalB, normalDiagonalB, trdiagonal, is_black);
-                            diagonal_probeing(*d, lengthA, diagonalA, normalDiagonalA, brdiagonal, is_black);
+                            line_probeing(*a, -lengthA, diagonalA, normalDiagonalA, tldiagonal);
+                            line_probeing(*b, -lengthB, diagonalB, normalDiagonalB, bldiagonal);
+                            line_probeing(*c, lengthB, diagonalB, normalDiagonalB, trdiagonal);
+                            line_probeing(*d, lengthA, diagonalA, normalDiagonalA, brdiagonal);
+                            line_probeing(*a, -lengthAB, lineAB, normalLineAB, atdiagonal);
+                            line_probeing(*a, -lengthAC, lineAC, normalLineAC, aldiagonal);
+                            line_probeing(*b, -lengthBD, lineBD, normalLineBD, blediagonal);
+                            line_probeing(*b, lengthAB, lineAB, normalLineAB, bbdiagonal);
+                            line_probeing(*c, -lengthCD, lineCD, normalLineCD, ctdiagonal);
+                            line_probeing(*c, lengthAC, lineAC, normalLineAC, crdiagonal);
+                            line_probeing(*d, lengthBD, lineBD, normalLineBD, drdiagonal);
+                            line_probeing(*d, lengthCD, lineCD, normalLineCD, dbdiagonal);
+                            int maxtop = 0;
+                            int maxbottom = 0;
+                            int maxleft = 0;
+                            int maxright = 0;
+                            int maxtopright = 0;
+                            int maxtopleft = 0;
+                            int maxbottomleft = 0;
+                            int maxbottomright = 0;
+                            center_probing(atdiagonal, ctdiagonal, center_point, &maxtop);
+                            qDebug() << "Max Top " << maxtop;
+                            //cv::line(camera_image, atdiagonal[maxtop], ctdiagonal[maxtop], cv::Scalar(0, 0, 255), 7, cv::LINE_8);
+                            center_probing(bbdiagonal, dbdiagonal, center_point, &maxbottom);
+                            qDebug() << "Max Bottom " << maxbottom;
+                            //cv::line(camera_image, bbdiagonal[maxbottom], dbdiagonal[maxbottom], cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+                            center_probing(aldiagonal, blediagonal, center_point, &maxleft);
+                            qDebug() << "Max Left " << maxleft;
+                            //cv::line(camera_image, aldiagonal[maxleft], blediagonal[maxleft], cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+                            center_probing(crdiagonal, drdiagonal, center_point, &maxright);
+                            qDebug() << "Max Right " << maxright;
+                            //cv::line(camera_image, crdiagonal[maxright], drdiagonal[maxright], cv::Scalar(0, 0, 255), 4, cv::LINE_8);
+                            diagonal_center_probing(ctdiagonal, maxtop, crdiagonal, maxright, trdiagonal);
+                            chessboard.clear();
+                            chessboard.push_back(QPair<QVector2D, bool>(QVector2D(0, 0), check_color(threshold_image, center_point)));
+                            for(int i = 1; i < maxtop; i++){
+                                qDebug() << "Top IN? " << rect_probing(atdiagonal[i], atdiagonal[i - 1], ctdiagonal[i], ctdiagonal[i - 1], QVector2D(0, i));
+                                qDebug() << "Fields in Chessboard " << chessboard.length();
+                            }
+                            qDebug() << "Fields in Chessboard " << chessboard.length();
+                            /*
+                            QList<QPair<QVector2D, bool>> chessboard;
+                            QPair<QVector2D, bool> centerPair(QVector2D(0, 0), check_color(threshold_image, center_point) == 0);
+                            chessboard.push_back(centerPair);
+
+                            qDebug() << "Chessboard got " << chessboard.length() << " values";
+                            for(QPair<QVector2D, bool> pair: chessboard){
+                                qDebug() << pair.first << " " << pair.second;
+                            }
+                            */
+
                             cv::Point2f maxTR;
                             for(int i = 0; i < 8; i++){
                                 for(int j = 0; j < 4; j++){
@@ -975,7 +1344,7 @@ void camera_worker::run()
                                 }
                             }
 
-                            find_center_points(center_point, lineAC, lengthAC, contours);
+                            //find_center_points(center_point, lineAC, lengthAC, contours);
                             /*
                             cv::Point2f center_right_line = line_P2P(center_point, center_point + lineAC);
                             normalizeVec(&center_right_line);
