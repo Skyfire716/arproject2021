@@ -161,13 +161,8 @@ public:
     float point_distance(cv::Point a, cv::Point2f b);
     float point_distance(cv::Point2f a, cv::Point2f b);
     int get_ordered_points(cv::Rect rect, std::vector<cv::Point> points);
-    bool rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos);
     int neighbour_rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos);
-    void line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized, cv::Point2f *result_array);
     cv::Point2f line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized);
-    void center_probing(cv::Point2f *guideA, cv::Point2f *guideB, cv::Point2f center, int *max_valid_index);
-    void diagonal_center_probing(cv::Point2f *guideA, int maxA, cv::Point2f *guideB, int maxB, cv::Point2f *diagonal);
-    void diagonal_probeing(cv::Point2f start_corner, float diagonalLength, cv::Point2f diagonalNormalized, cv::Point2f diagonalNormalVec, cv::Point2f *result_array, bool is_black);
     cv::Point2f intersection_P2PLine_P2PLine(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3, cv::Point2f p4);
     cv::Point2f line_P2P(cv::Point2f p1, cv::Point2f p2);
     cv::Point2f angled_vector_from_normal(cv::Point2f normal, float angle_deg);
@@ -190,8 +185,6 @@ public:
     bool is_nan(cv::Point2f p);
     bool point_in_mat(cv::Mat image, cv::Point2f p);
     bool rect_in_mat(cv::Mat image, cv::Rect rect);
-    void find_center_points(cv::Point2f center_point, cv::Point2f direction, float length, contour_vector_t contours);
-    void check_texture(cv::Point2f start, cv::Point2f *resultA, cv::Point2f *resultB, cv::Point2f guideA, cv::Point2f guideB, cv::Point2f normalDiagonalA, cv::Point2f normalDiagonalB, cv::Point2f guideAB);
     void print_vec(cv::Point2f p);
     bool running;
 
