@@ -11,6 +11,7 @@
 #include <QDebug>
 #include <QVector>
 #include <cstdio>
+#include "chessboard_controller.h"
 
 #define CHESSBOARD_A1 0
 #define CHESSBOARD_A3 1
@@ -161,7 +162,9 @@ public:
     float point_distance(cv::Point2f a, cv::Point2f b);
     int get_ordered_points(cv::Rect rect, std::vector<cv::Point> points);
     bool rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos);
+    int neighbour_rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos);
     void line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized, cv::Point2f *result_array);
+    cv::Point2f line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized);
     void center_probing(cv::Point2f *guideA, cv::Point2f *guideB, cv::Point2f center, int *max_valid_index);
     void diagonal_center_probing(cv::Point2f *guideA, int maxA, cv::Point2f *guideB, int maxB, cv::Point2f *diagonal);
     void diagonal_probeing(cv::Point2f start_corner, float diagonalLength, cv::Point2f diagonalNormalized, cv::Point2f diagonalNormalVec, cv::Point2f *result_array, bool is_black);
@@ -174,6 +177,9 @@ public:
     void harris_edges(cv::Rect rect, QList<cv::Point> *edges);
     void harris_corner(cv::Rect rect, QList<cv::Point> *corners);
     void harris_corner(cv::Rect rect, QList<QPair<cv::Point, double>> *corners);
+    bool probe_field();
+    bool probe_neighbours(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos, QList<QVector2D> &no_field, QList<QVector2D> &valid);
+    bool probe_neighbours(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos, chessboard_controller &chesscontroller);
     bool field_check(cv::Rect rect, cv::Point2f p);
     float intersection_NormalLine_NormalLine(cv::Point2f line_p1, cv::Point2f line_n1, cv::Point2f line_p2, cv::Point2f line_n2);
     float distance_point_to_line(cv::Point2f lineA, cv::Point2f lineB, cv::Point2f p);
@@ -214,6 +220,7 @@ private:
     QList<int> cv_cameras;
     cv::VideoCapture cv_camera;
     QList<QPair<QVector2D, bool>> chessboard;
+    chessboard_controller my_chessboard_controller;
 };
 
 class camera_controller : public QObject

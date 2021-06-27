@@ -221,6 +221,16 @@ bool camera_worker::rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr,
     return false;
 }
 
+int camera_worker::neighbour_rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos)
+{
+    cv::Point2f center_point = intersection_P2PLine_P2PLine(tl, br, bl, tr);
+    int color = check_color(threshold_image, center_point);
+    if(color != 2){
+        cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 3, cv::LINE_8);
+    }
+    return color;
+}
+
 void camera_worker::line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized, cv::Point2f *result_array)
 {
     int sign = 1;
@@ -243,6 +253,18 @@ void camera_worker::line_probeing(cv::Point2f start_corner, float line_length, c
         //cv::circle(camera_image, pix2 + sign * adopted_diagonal_length * line_normalized_vec, radius, cv::Scalar(0, 255, 0), 3, cv::LINE_8);
         pix1 = pix2;
     }
+}
+
+cv::Point2f camera_worker::line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized)
+{
+    int sign = 1;
+    if(line_length < 0){
+        sign = -1;
+        line_length = abs(line_length);
+    }
+    cv::circle(camera_image, start_corner, 10, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+    float adopted_diagonal_length = line_length;
+    return getsubPixel(start_corner + sign * adopted_diagonal_length * line_normalized_vec);
 }
 
 void camera_worker::center_probing(cv::Point2f *guideA, cv::Point2f *guideB, cv::Point2f center, int *max_valid_index)
@@ -634,6 +656,155 @@ void camera_worker::harris_corner(cv::Rect rect, QList<QPair<cv::Point, double> 
              }
          }
     }
+}
+
+bool camera_worker::probe_neighbours(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos, QList<QVector2D> &no_field, QList<QVector2D> &valid)
+{
+    cv::Point2f center_point = intersection_P2PLine_P2PLine(tl, br, tr, bl);
+    int center_color = check_color(threshold_image, center_point, 50);
+    if(center_color == 2){
+        return false;
+    }
+    cv::Point2f lineAC = line_P2P(tl, tr);
+    cv::Point2f lineAB = line_P2P(tl, bl);
+    cv::Point2f lineCD = line_P2P(tr, br);
+    cv::Point2f lineBD = line_P2P(bl, br);
+    float lengthAC = normalizeVec(&lineAC);
+    float lengthAB = normalizeVec(&lineAB);
+    float lengthCD = normalizeVec(&lineCD);
+    float lengthBD = normalizeVec(&lineBD);
+    cv::Point2f normalLineAC(-lineAC.y, lineAC.x);
+    cv::Point2f normalLineAB(-lineAB.y, lineAB.x);
+    cv::Point2f normalLineCD(-lineCD.y, lineCD.x);
+    cv::Point2f normalLineBD(-lineBD.y, lineBD.x);
+    cv::Point2f tltn = line_probeing(tl, -lengthAB, lineAB, normalLineAB);
+    cv::Point2f tlln = line_probeing(tl, -lengthAC, lineAC, normalLineAC);
+    cv::Point2f blln = line_probeing(bl, -lengthBD, lineBD, normalLineBD);
+    cv::Point2f blbn = line_probeing(bl, lengthAB, lineAB, normalLineAB);
+    cv::Point2f trtn = line_probeing(tr, -lengthCD, lineCD, normalLineCD);
+    cv::Point2f trrn = line_probeing(tr, lengthAC, lineAC, normalLineAC);
+    cv::Point2f brrn = line_probeing(br, lengthBD, lineBD, normalLineBD);
+    cv::Point2f brbn = line_probeing(br, lengthCD, lineCD, normalLineCD);
+    QVector2D top = QVector2D(current_pos.x(), current_pos.y() + 1);
+    QVector2D right = QVector2D(current_pos.x() + 1, current_pos.y());
+    QVector2D bottom = QVector2D(current_pos.x(), current_pos.y() - 1);
+    QVector2D left = QVector2D(current_pos.x() - 1, current_pos.y());
+    int counter = 0;
+    int left_neighbour_color = 2;
+    if(!(valid.contains(left) || no_field.contains(left))){
+        left_neighbour_color = neighbour_rect_probing(tlln, blln, tl, bl, left);
+    }
+    int right_neighbour_color = 2;
+    if(!(valid.contains(right) || no_field.contains(right))){
+        right_neighbour_color = neighbour_rect_probing(tr, br, trrn, brrn, right);
+    }
+    int top_neighbour_color = 2;
+    if(!(valid.contains(top) || no_field.contains(top))){
+        top_neighbour_color = neighbour_rect_probing(tltn, tl, trtn, tr, top);
+    }
+    int bottom_neighbour_color = 2;
+    if(!(valid.contains(bottom) || no_field.contains(bottom))){
+        bottom_neighbour_color = neighbour_rect_probing(bl, blbn, br, brbn, bottom);
+    }
+    if((center_color != left_neighbour_color) && (left_neighbour_color != 2)){
+        counter += 1;
+        valid.push_back(left);
+        probe_neighbours(tlln, blln, tl, bl, left, no_field, valid);
+        qDebug() << "Valid " << left;
+    }else {
+        no_field.push_back(left);
+    }
+    if((center_color != top_neighbour_color) && (top_neighbour_color != 2)){
+        counter += 1;
+        valid.push_back(right);
+        probe_neighbours(tr, br, trrn, brrn, right, no_field, valid);
+        qDebug() << "Valid " << right;
+    }else{
+        no_field.push_back(right);
+    }
+    if((center_color != right_neighbour_color) && (right_neighbour_color != 2)){
+        counter += 1;
+        valid.push_back(top);
+        probe_neighbours(tltn, tl, trtn, tr, top, no_field, valid);
+        qDebug() << "Valid " << top;
+    }else{
+        no_field.push_back(top);
+    }
+    if((center_color != bottom_neighbour_color) && (bottom_neighbour_color != 2)){
+        counter += 1;
+        valid.push_back(bottom);
+        probe_neighbours(bl, blbn, br, brbn, bottom, no_field, valid);
+        qDebug() << "Valid " << bottom;
+    }else{
+        no_field.push_back(bottom);
+    }
+    return (counter >= 2);
+}
+
+bool camera_worker::probe_neighbours(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos, chessboard_controller &chesscontroller){
+    cv::Point2f center_point = intersection_P2PLine_P2PLine(tl, br, tr, bl);
+    int center_color = check_color(threshold_image, center_point, 50);
+    if(center_color == 2){
+        return false;
+    }
+    cv::Point2f lineAC = line_P2P(tl, tr);
+    cv::Point2f lineAB = line_P2P(tl, bl);
+    cv::Point2f lineCD = line_P2P(tr, br);
+    cv::Point2f lineBD = line_P2P(bl, br);
+    float lengthAC = normalizeVec(&lineAC);
+    float lengthAB = normalizeVec(&lineAB);
+    float lengthCD = normalizeVec(&lineCD);
+    float lengthBD = normalizeVec(&lineBD);
+    cv::Point2f normalLineAC(-lineAC.y, lineAC.x);
+    cv::Point2f normalLineAB(-lineAB.y, lineAB.x);
+    cv::Point2f normalLineCD(-lineCD.y, lineCD.x);
+    cv::Point2f normalLineBD(-lineBD.y, lineBD.x);
+    cv::Point2f tltn = line_probeing(tl, -lengthAB, lineAB, normalLineAB);
+    cv::Point2f tlln = line_probeing(tl, -lengthAC, lineAC, normalLineAC);
+    cv::Point2f blln = line_probeing(bl, -lengthBD, lineBD, normalLineBD);
+    cv::Point2f blbn = line_probeing(bl, lengthAB, lineAB, normalLineAB);
+    cv::Point2f trtn = line_probeing(tr, -lengthCD, lineCD, normalLineCD);
+    cv::Point2f trrn = line_probeing(tr, lengthAC, lineAC, normalLineAC);
+    cv::Point2f brrn = line_probeing(br, lengthBD, lineBD, normalLineBD);
+    cv::Point2f brbn = line_probeing(br, lengthCD, lineCD, normalLineCD);
+    QVector2D top = QVector2D(current_pos.x(), current_pos.y() + 1);
+    QVector2D right = QVector2D(current_pos.x() + 1, current_pos.y());
+    QVector2D bottom = QVector2D(current_pos.x(), current_pos.y() - 1);
+    QVector2D left = QVector2D(current_pos.x() - 1, current_pos.y());
+    int counter = 0;
+    int left_neighbour_color = neighbour_rect_probing(tlln, blln, tl, bl, left);
+    int right_neighbour_color = neighbour_rect_probing(tr, br, trrn, brrn, right);
+    int top_neighbour_color = neighbour_rect_probing(tltn, tl, trtn, tr, top);
+    int bottom_neighbour_color = neighbour_rect_probing(bl, blbn, br, brbn, bottom);
+    if((center_color != left_neighbour_color) && (left_neighbour_color != 2)){
+        if(chesscontroller.add_rect(left, QPointF(tlln.x, tlln.y), QPointF(tl.x, tl.y), QPointF(blln.x, blln.y), QPointF(bl.x, bl.y), QPointF(center_point.x, center_point.y), left_neighbour_color == 0)){
+            counter += 1;
+            probe_neighbours(tlln, blln, tl, bl, left, chesscontroller);
+            qDebug() << "Valid " << left;
+        }
+    }
+    if((center_color != top_neighbour_color) && (top_neighbour_color != 2)){
+        if(chesscontroller.add_rect(right, QPointF(tr.x, tr.y), QPointF(trrn.x, trrn.y), QPointF(br.x, br.y), QPointF(brrn.x, brrn.y), QPointF(center_point.x, center_point.y), top_neighbour_color == 0)){
+            counter += 1;
+            probe_neighbours(tr, br, trrn, brrn, right, chesscontroller);
+            qDebug() << "Valid " << right;
+        }
+    }
+    if((center_color != right_neighbour_color) && (right_neighbour_color != 2)){
+        if(chesscontroller.add_rect(top, QPointF(tltn.x, tltn.y), QPointF(trtn.x, trtn.y), QPointF(tl.x, tl.y), QPointF(tr.x, tr.y), QPointF(center_point.x, center_point.y), right_neighbour_color == 0)){
+            counter += 1;
+            probe_neighbours(tltn, tl, trtn, tr, top, chesscontroller);
+            qDebug() << "Valid " << top;
+        }
+    }
+    if((center_color != bottom_neighbour_color) && (bottom_neighbour_color != 2)){
+        if(chesscontroller.add_rect(bottom, QPointF(bl.x, bl.y), QPointF(br.x, br.y), QPointF(blbn.x, blbn.y), QPointF(brbn.x, brbn.y), QPointF(center_point.x, center_point.y), bottom_neighbour_color == 0)){
+            counter += 1;
+            probe_neighbours(bl, blbn, br, brbn, bottom, chesscontroller);
+            qDebug() << "Valid " << bottom;
+        }
+    }
+    return (counter >= 2);
 }
 
 bool camera_worker::field_check(cv::Rect rect, cv::Point2f p)
@@ -1301,6 +1472,19 @@ void camera_worker::run()
                             int maxtopleft = 0;
                             int maxbottomleft = 0;
                             int maxbottomright = 0;
+                            QList<QVector2D> valid;
+                            QList<QVector2D> no_field;
+                            valid.push_back(QVector2D(0, 0));
+                            qDebug() << "Valid StartPoint " << probe_neighbours(*a, *c, *b, *d, QVector2D(0, 0), my_chessboard_controller);
+                            my_chessboard_controller.add_rect(QVector2D(0, 0), QPointF(a->x, a->y), QPointF(c->x, c->y), QPointF(b->x, b->y), QPointF(d->x, d->y), QPointF(center_point.x, center_point.y), (check_color(threshold_image, center_point) == 0));
+                            QList<QPair<int, int>> koords;
+                            for(QVector2D p : valid){
+                                QPair<int, int> pair((int)p.x(), (int)p.y());
+                                koords.push_back(pair);
+                            }
+                            qDebug() << "Detected " << koords.length() << " fields";
+                            koords.clear();
+                            /*
                             center_probing(atdiagonal, ctdiagonal, center_point, &maxtop);
                             qDebug() << "Max Top " << maxtop;
                             //cv::line(camera_image, atdiagonal[maxtop], ctdiagonal[maxtop], cv::Scalar(0, 0, 255), 7, cv::LINE_8);

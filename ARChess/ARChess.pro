@@ -12,12 +12,16 @@ CONFIG += c++11 resources_big
 SOURCES += \
     archesswidget.cpp \
     camera_controller.cpp \
+    chessboard.cpp \
+    chessboard_controller.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     archesswidget.h \
     camera_controller.h \
+    chessboard.h \
+    chessboard_controller.h \
     mainwindow.h
 
 FORMS += \
