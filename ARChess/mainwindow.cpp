@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
     threshold_slider = ui->threshold_slider_id;
     threshold_value_label = ui->threshold_value_label_ui;
     arwidget = ui->widget3d;
+    x_click_value = ui->x_value;
+    y_click_value = ui->y_value;
     QString version_text;
     version_text = "OpenCV: ";
     version_text.append(CV_VERSION);
@@ -33,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug() << "init";
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
     connect(cam_control->worker, &camera_worker::image_ready, arwidget->planeTextureImage, &archessbackgound::receive_image);
+    connect(arwidget, &archesswidget::value_click_changed, this, &MainWindow::set_pos_values);
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();
@@ -67,6 +70,12 @@ QImage MainWindow::mat_to_qimage_ref(cv::Mat &mat, QImage::Format format) {
 
 void MainWindow::add_camerabox_item(QString item_name){
     camera_box->addItem(item_name);
+}
+
+void MainWindow::set_pos_values(int value_x, int value_y)
+{
+    x_click_value->setText(QString::number(value_x));
+    y_click_value->setText(QString::number(value_y));
 }
 
 void MainWindow::on_camera_combbox_currentIndexChanged(int index)

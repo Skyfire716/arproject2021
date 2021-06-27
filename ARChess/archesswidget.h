@@ -6,6 +6,7 @@
 #include <Qt3DExtras>
 #include <Qt3DRender>
 #include <QImage>
+#include <QLabel>
 #include <QPixmap>
 
 class archessbackgound : public Qt3DRender::QPaintedTextureImage{
@@ -31,6 +32,7 @@ public:
     archessbackgound *planeTextureImage;
 
 signals:
+    void value_click_changed(int x_value, int y_value);
 
 private:
     QWidget *m_3d_window_container;
@@ -39,6 +41,7 @@ private:
 
 protected:
     void resizeEvent(QResizeEvent *event);
+    void mousePressEvent(QMouseEvent *event);
 };
 
 #endif // ARCHESSWIDGET_H

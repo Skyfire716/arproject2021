@@ -127,6 +127,12 @@ void archesswidget::resizeEvent(QResizeEvent *event)
     this->update();
 }
 
+void archesswidget::mousePressEvent(QMouseEvent *event)
+{
+    emit value_click_changed(event->x(), event->y());
+    event->accept();
+}
+
 archessbackgound::archessbackgound(Qt3DCore::QNode *parent) : Qt3DRender::QPaintedTextureImage(parent)
 {
 

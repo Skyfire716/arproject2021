@@ -46,6 +46,7 @@ private slots:
 
 public slots:
     void add_camerabox_item(QString item_name);
+    void set_pos_values(int value_x, int value_y);
 
 private:
     Ui::MainWindow *ui;
@@ -62,6 +63,7 @@ private:
     QImage::Format format;
     camera_controller *cam_control;
     archesswidget *arwidget;
-
+    QLabel *x_click_value;
+    QLabel *y_click_value;
 };
 #endif // MAINWINDOW_H
