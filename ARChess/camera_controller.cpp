@@ -732,15 +732,17 @@ void camera_worker::run()
                             QList<QVector2D> valid;
                             QList<QVector2D> no_field;
                             valid.push_back(QVector2D(0, 0));
-                            qDebug() << "Valid StartPoint " << probe_neighbours(*a, *c, *b, *d, QVector2D(0, 0), my_chessboard_controller);
+                            qDebug() << "Valid StartPoint " << probe_neighbours(*a, *c, *b, *d, QVector2D(0, 0), no_field, valid);
+                            //qDebug() << "Valid StartPoint " << probe_neighbours(*a, *c, *b, *d, QVector2D(0, 0), my_chessboard_controller);
                             my_chessboard_controller.add_rect(QVector2D(0, 0), QPointF(a->x, a->y), QPointF(c->x, c->y), QPointF(b->x, b->y), QPointF(d->x, d->y), QPointF(center_point.x, center_point.y), (check_color(threshold_image, center_point) == 0));
-                            QList<QPair<int, int>> koords;
+                            QSet<QPair<int, int>> koords;
                             for(QVector2D p : valid){
                                 QPair<int, int> pair((int)p.x(), (int)p.y());
-                                koords.push_back(pair);
+                                koords.insert(pair);
                             }
-                            qDebug() << "Detected " << koords.length() << " fields";
+                            qDebug() << "Detected " << koords.size() << " fields";
                             koords.clear();
+                            is_first = false;
 
                         }
                     }
