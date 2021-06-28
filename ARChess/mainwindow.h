@@ -41,7 +41,7 @@ private slots:
     void on_pushButton_clicked();
     void on_threshold_slider_id_valueChanged(int value);
     void on_threshold_method_ui_currentIndexChanged(int index);
-
+    void chessboard_updated(QPixmap pix);
     void on_result_image_box_currentIndexChanged(int index);
 
 public slots:

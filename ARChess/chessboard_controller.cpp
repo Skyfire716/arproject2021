@@ -15,3 +15,39 @@ void chessboard_controller::switch_board()
     active = !active;
     boards[!active].clear();
 }
+
+bool chessboard_controller::get_field(char letter, char number)
+{
+    return boards[!active].get_color(letter, number);
+}
+
+bool chessboard_controller::get_origin_color()
+{
+    QVector2D origin = boards[!active].get_origin();
+    qDebug() << "Origin by " << origin;
+    return get_field(origin.x(), origin.y());
+}
+
+QImage chessboard_controller::get_image()
+{
+    QImage img(80, 80, QImage::Format_RGB666);
+    for(int i = 0; i < 8; i++){
+        for(int j = 0; j < 8; j++){
+            QColor color;
+            int board_color = boards[!active].get_color(i + 65, j);
+            if(board_color == chessboard::BLACK){
+                color.setRgb(0, 0, 0);
+            }else if(board_color == chessboard::WHITE){
+                color.setRgb(255, 255, 255);
+            }else{
+                color.setRgb(255, 0, 0);
+            }
+            for(int s = 0; s < 10; s++){
+                for(int k = 0; k < 10; k++){
+                    img.setPixelColor(10 * i + s, 10 * j + k, color);
+                }
+            }
+        }
+    }
+    return img;
+}

@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug() << "init";
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
     connect(cam_control->worker, &camera_worker::image_ready, arwidget->planeTextureImage, &archessbackgound::receive_image);
+    connect(cam_control->worker, &camera_worker::chessboard_updated, this, &MainWindow::chessboard_updated);
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();
@@ -108,7 +109,10 @@ void MainWindow::on_threshold_method_ui_currentIndexChanged(int index)
     cam_control->worker->change_threshold_method(index);
 }
 
-
+void MainWindow::chessboard_updated(QPixmap pix)
+{
+    openvc_version->setPixmap(pix);
+}
 
 void MainWindow::on_result_image_box_currentIndexChanged(int index)
 {

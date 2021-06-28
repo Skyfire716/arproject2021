@@ -12,6 +12,7 @@
 #include <QVector>
 #include <cstdio>
 #include "chessboard_controller.h"
+#include "chessboard.h"
 
 #define CHESSBOARD_A1 0
 #define CHESSBOARD_A3 1
@@ -200,6 +201,7 @@ signals:
     void image_ready(QPixmap img);
     void finished();
     void camera_detected(QString cam_name);
+    void chessboard_updated(QPixmap pix);
 
 private:
     int threshold_value;

@@ -450,7 +450,7 @@ int camera_worker::check_color(cv::Mat image, cv::Point p, float area)
 {
     cv::Rect rect(p.x - area, p.y - area, 2*area, 2*area);
     if(!rect_in_mat(image, rect)){
-        return 2;
+        return chessboard::UNDEFINED;
     }
     int sum = 0;
     for(int i = -area; i <= area; i++){
@@ -461,11 +461,11 @@ int camera_worker::check_color(cv::Mat image, cv::Point p, float area)
         }
     }
     if(sum < 0.05 * pow(area, 2) * 1){
-        return 0;
+        return chessboard::BLACK;
     }else if(sum > 0.95 * pow(area, 2) * 255){
-        return 1;
+        return chessboard::WHITE;
     }else{
-        return 2;
+        return chessboard::UNDEFINED;
     }
 }
 
@@ -743,6 +743,23 @@ void camera_worker::run()
                             qDebug() << "Detected " << koords.size() << " fields";
                             koords.clear();
                             is_first = false;
+                            bool color = chessboard::BLACK;
+                            for(int x = 0; x < 8; x++){
+                                color = x % 2;
+                                for(int y = 0; y < 8; y++){
+                                    int xoffset = 5;
+                                    int yoffset = 3;
+                                    int realx = x - xoffset;
+                                    int realy = y - yoffset;
+                                    qDebug() << "Added " << x << " " << y << " " << my_chessboard_controller.add_rect(QVector2D(realx, realy), QPointF(realx, realy + 1), QPointF(realx + 1, realy + 1), QPointF(realx, realy), QPointF(realx + 1, realy), QPointF(0.5, 0.5), color);
+                                    if(x == 0 && y == 0){
+                                        qDebug() << my_chessboard_controller.get_field('A', '0') << " should be " << color << " origin " << my_chessboard_controller.get_origin_color();
+                                    }
+                                    color = !color;
+                                }
+                            }
+                            emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
+                            my_chessboard_controller.switch_board();
 
                         }
                     }

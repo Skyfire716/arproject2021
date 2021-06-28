@@ -5,6 +5,7 @@
 #include <QList>
 #include <QVector2D>
 #include <QPair>
+#include <QImage>
 #include "chessboard.h"
 
 class chessboard_controller : QObject
@@ -14,6 +15,9 @@ public:
     chessboard_controller();
     bool add_rect(QVector2D local_offset, QPointF tl_corner, QPointF tr_corner, QPointF bl_corner, QPointF br_corner, QPointF center, bool color);
     void switch_board();
+    bool get_field(char letter, char number);
+    bool get_origin_color();
+    QImage get_image();
 
 private:
     chessboard boards[2];
