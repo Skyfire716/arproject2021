@@ -14,39 +14,6 @@
 #include "chessboard_controller.h"
 #include "chessboard.h"
 
-#define CHESSBOARD_A1 0
-#define CHESSBOARD_A3 1
-#define CHESSBOARD_A5 2
-#define CHESSBOARD_A7 3
-#define CHESSBOARD_B2 4
-#define CHESSBOARD_B4 5
-#define CHESSBOARD_B6 6
-#define CHESSBOARD_B8 7
-#define CHESSBOARD_C1 8
-#define CHESSBOARD_C3 9
-#define CHESSBOARD_C5 10
-#define CHESSBOARD_C7 11
-#define CHESSBOARD_D2 12
-#define CHESSBOARD_D4 13
-#define CHESSBOARD_D6 14
-#define CHESSBOARD_D8 15
-#define CHESSBOARD_E1 16
-#define CHESSBOARD_E3 17
-#define CHESSBOARD_E5 18
-#define CHESSBOARD_E7 19
-#define CHESSBOARD_F2 20
-#define CHESSBOARD_F4 21
-#define CHESSBOARD_F6 22
-#define CHESSBOARD_F8 23
-#define CHESSBOARD_G1 24
-#define CHESSBOARD_G3 25
-#define CHESSBOARD_G5 26
-#define CHESSBOARD_G7 27
-#define CHESSBOARD_H2 28
-#define CHESSBOARD_H4 29
-#define CHESSBOARD_H6 30
-#define CHESSBOARD_H8 31
-
 class camera_worker : public QObject
 {
     Q_OBJECT
@@ -64,82 +31,7 @@ class camera_worker : public QObject
     const int COUNTER_BL = 1;
     const int COUNTER_TR = 2;
     const int COUNTER_BR = 3;
-    const int A1_RANGES[4] = {7, 7, 0, 0};
-    const int A3_RANGES[4] = {5, 7, 2, 0};
-    const int A5_RANGES[4] = {3, 7, 4, 0};
-    const int A7_RANGES[4] = {1, 7, 6, 0};
-    const int B2_RANGES[4] = {6, 6, 1, 1};
-    const int B4_RANGES[4] = {4, 6, 3, 1};
-    const int B6_RANGES[4] = {2, 6, 5, 1};
-    const int B8_RANGES[4] = {0, 6, 7, 1};
-    const int C1_RANGES[4] = {7, 5, 0, 2};
-    const int C3_RANGES[4] = {5, 5, 2, 2};
-    const int C5_RANGES[4] = {3, 5, 4, 2};
-    const int C7_RANGES[4] = {1, 5, 6, 2};
-    const int D2_RANGES[4] = {6, 4, 1, 3};
-    const int D4_RANGES[4] = {4, 4, 3, 3};
-    const int D6_RANGES[4] = {2, 4, 5, 3};
-    const int D8_RANGES[4] = {0, 4, 7, 3};
-    const int E1_RANGES[4] = {7, 3, 0, 4};
-    const int E3_RANGES[4] = {5, 3, 2, 4};
-    const int E5_RANGES[4] = {3, 3, 4, 4};
-    const int E7_RANGES[4] = {1, 3, 6, 4};
-    const int F2_RANGES[4] = {6, 2, 1, 5};
-    const int F4_RANGES[4] = {4, 2, 3, 5};
-    const int F6_RANGES[4] = {2, 2, 5, 5};
-    const int F8_RANGES[4] = {0, 2, 7, 5};
-    const int G1_RANGES[4] = {7, 1, 0, 6};
-    const int G3_RANGES[4] = {5, 1, 2, 6};
-    const int G5_RANGES[4] = {3, 1, 4, 6};
-    const int G7_RANGES[4] = {1, 1, 6, 6};
-    const int H2_RANGES[4] = {6, 0, 1, 7};
-    const int H4_RANGES[4] = {4, 0, 3, 7};
-    const int H6_RANGES[4] = {2, 0, 5, 7};
-    const int H8_RANGES[4] = {0, 0, 7, 7};
-    int CHESS_BOARD_RANGER[32][4] = {{7, 7, 0, 0}, {5, 7, 2, 0}, {3, 7, 4, 0}, {1, 7, 6, 0},
-                                           {6, 6, 1, 1}, {4, 6, 3, 1}, {2, 6, 5, 1}, {0, 6, 7, 1},
-                                           {7, 5, 0, 2}, {5, 5, 2, 2}, {3, 5, 4, 2}, {1, 5, 6, 2},
-                                           {6, 4, 1, 3}, {4, 4, 3, 3}, {2, 4, 5, 3}, {0, 4, 7, 3},
-                                           {7, 3, 0, 4}, {5, 3, 2, 4}, {3, 3, 4, 4}, {1, 3, 6, 4},
-                                           {6, 2, 1, 5}, {4, 2, 3, 5}, {2, 2, 5, 5}, {0, 2, 7, 5},
-                                           {7, 1, 0, 6}, {5, 1, 2, 6}, {3, 1, 4, 6}, {1, 1, 6, 6},
-                                           {6, 0, 1, 7}, {4, 0, 3, 7}, {2, 0, 5, 7}, {0, 0, 7, 7}
-                                          };
-    const int CHESS_BOARD_MAP[32] = {
-                                        8111,   //A1
-                                        6311,   //A3
-                                        5411,   //A5
-                                        7211,   //A7
-                                        7222,   //B2
-                                        5422,   //B4
-                                        6322,   //B6
-                                        7211,   //B8
-                                        6311,   //C1
-                                        6333,   //C3
-                                        5433,   //C5
-                                        6322,   //C7
-                                        5422,   //D2
-                                        5444,   //D4
-                                        5433,   //D6
-                                        5411,   //D8
-                                        5411,   //E1
-                                        5433,   //E3
-                                        5444,   //E5
-                                        5422,   //E7
-                                        6322,   //F2
-                                        5433,   //F4
-                                        6333,   //F6
-                                        6311,   //F8
-                                        7211,   //G1
-                                        6322,   //G3
-                                        5422,   //G5
-                                        7222,   //G7
-                                        7211,   //H2
-                                        5411,   //H4
-                                        6311,   //H6
-                                        8111,   //H8
-                                        };
-
+    
 public:
     volatile bool init_b;
     volatile bool capture_b;
@@ -162,7 +54,10 @@ public:
     float point_distance(cv::Point a, cv::Point2f b);
     float point_distance(cv::Point2f a, cv::Point2f b);
     int get_ordered_points(cv::Rect rect, std::vector<cv::Point> points);
-    int neighbour_rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos);
+    int neighbour_rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br);
+    int neighbour_validation_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br);
+    QPointF cv_point2f2qpoint(cv::Point2f p);
+    QVector2D cv_point2f2qvec2d(cv::Point2f p);
     cv::Point2f line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized);
     cv::Point2f intersection_P2PLine_P2PLine(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3, cv::Point2f p4);
     cv::Point2f line_P2P(cv::Point2f p1, cv::Point2f p2);
@@ -173,9 +68,11 @@ public:
     void harris_edges(cv::Rect rect, QList<cv::Point> *edges);
     void harris_corner(cv::Rect rect, QList<cv::Point> *corners);
     void harris_corner(cv::Rect rect, QList<QPair<cv::Point, double>> *corners);
+    QPair<int, int> vec2pair(QVector2D v);
     bool probe_field();
+    bool valid_neighbour(cv::Point2f p, cv::Point2f axisA, cv::Point2f axisB);
     bool probe_neighbours(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos, QList<QVector2D> &no_field, QList<QVector2D> &valid);
-    bool probe_neighbours(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos, chessboard_controller &chesscontroller);
+    bool probe_neighbours(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos, chessboard_controller &chesscontroller, QSet<QPair<int, int>> &no_field, QSet<QPair<int, int>> &valid);
     bool field_check(cv::Rect rect, cv::Point2f p);
     float intersection_NormalLine_NormalLine(cv::Point2f line_p1, cv::Point2f line_n1, cv::Point2f line_p2, cv::Point2f line_n2);
     float distance_point_to_line(cv::Point2f lineA, cv::Point2f lineB, cv::Point2f p);
@@ -188,7 +85,7 @@ public:
     bool rect_in_mat(cv::Mat image, cv::Rect rect);
     void print_vec(cv::Point2f p);
     bool running;
-
+    
 public slots:
     void capture_video();
     void change_result_image(int mat_index);
@@ -196,13 +93,13 @@ public slots:
     void change_threshold(int thresold);
     void change_threshold_method(int threshold_method);
     void run();
-
+    
 signals:
     void image_ready(QPixmap img);
     void finished();
     void camera_detected(QString cam_name);
     void chessboard_updated(QPixmap pix);
-
+    
 private:
     int threshold_value;
     int threshold_method;
@@ -238,13 +135,13 @@ public:
         worker_thread->wait();
     }
     camera_worker *worker;
-
+    
 public slots:
     void init();
     void start_capture();
     void stop_capture();
 private:
-
+    
 };
 
 #endif // CAMERA_CONTROLLER_H

@@ -3,7 +3,7 @@
 
 chessboard::chessboard()
 {
-
+    
 }
 
 void chessboard::clear()
@@ -22,7 +22,7 @@ void chessboard::clear()
     }
     for(int i = 0; i < 8; i++){
         for(int j = 0; j < 8; j++){
-            colors[i][j] = false;
+            colors[i][j] = chessboard::UNDEFINED;
             centers[i][j].clear();
         }
     }
@@ -63,43 +63,60 @@ bool chessboard::add_field(QVector2D local_offset, QPointF tl_corner, QPointF tr
         qDebug() << "Error in Indexes";
         return false;
     }
-    corners[map((int)local_offset.x(), min_x, max_x, 0, 7)][map((int)local_offset.y() + 1, min_y, max_y, 0, 7)].push_back(QVector2D(tl_corner));
-    corners[map((int)local_offset.x() + 1, min_x, max_x, 0, 7)][map((int)local_offset.y() + 1, min_y, max_y, 0, 7)].push_back(QVector2D(tr_corner));
-    corners[map((int)local_offset.x(), min_x, max_x, 0, 7)][map((int)local_offset.y(), min_y, max_y, 0, 7)].push_back(QVector2D(bl_corner));
-    corners[map((int)local_offset.x() + 1, min_x, max_x, 0, 7)][map((int)local_offset.y(), min_y, max_y, 0, 7)].push_back(QVector2D(br_corner));
-
-    qDebug() << "Mapping " << local_offset.x() << "|" << local_offset.y() << " to " << map((int)local_offset.x(), min_x, max_x, 0, 7) << "|" << map((int)local_offset.y(), min_y, max_y, 0, 7) << " painting " << color;
-    colors[map((int)local_offset.x(), min_x, max_x, 0, 7)][map((int)local_offset.y(), min_y, max_y, 0, 7)] = color;
-
-    centers[map((int)local_offset.x(), min_x, max_x, 0, 7)][map((int)local_offset.y(), min_y, max_y, 0, 7)].push_back(QVector2D(center));
+    int x_index = local_offset.x();
+    int y_index = local_offset.y();
+    if(x_index < 0){
+        x_index = 8 + x_index;
+    }
+    if(y_index < 0){
+        y_index = 8 + y_index;
+    }
+    qDebug() << "Index " << x_index << " " << y_index;
+    if(colors[x_index][y_index] != chessboard::UNDEFINED && colors[x_index][y_index] != color){
+        qDebug() << "Suspicious coloring";
+        return false;
+    }
+    
+    corners[x_index][y_index + 1].push_back(QVector2D(tl_corner));
+    corners[x_index + 1][y_index + 1].push_back(QVector2D(tr_corner));
+    corners[x_index][y_index].push_back(QVector2D(bl_corner));
+    corners[x_index + 1][y_index].push_back(QVector2D(br_corner));
+    
+    colors[x_index][y_index] = color;
+    
+    centers[x_index][y_index].push_back(QVector2D(center));
     return true;
 }
 
 bool chessboard::get_color(char letter, char number)
 {
-    int y_index = 0;
-    int x_index = 0;
-    if(letter >= 65 && letter < 73){
-        x_index = letter % 65;
-        if(number >= 0 && number < 8){
-            y_index = number;
-        }else if(number >= 48 && number < 56){
-            y_index = number % 48;
-        }else{
-            return  false;
-        }
-        x_index = map(map(x_index, 0, 7, min_x, max_x), min_x, max_x, 0, 7);
-        y_index = map(map(y_index, 0, 7, min_y, max_y), min_y, max_y, 0, 7);
-        return colors[x_index][y_index];
+    QPoint p = map_koords_to_index(letter, number);
+    if(p.x() == -1 || p.y() == -1){
+        return chessboard::UNDEFINED;
     }
+    return colors[p.x()][p.y()];
 }
 
 QVector2D chessboard::get_origin()
 {
-    return QVector2D(map(0, min_x, max_x, 0, 7), map(0, min_y, max_y, 0, 7));
+    return QVector2D(0, 0);
+}
+
+QPoint chessboard::get_origin_index()
+{
+    return map_index_to_koords(0, 0);
 }
 
 QVector2D chessboard::get_center(char letter, char number)
+{
+    QPoint p = map_koords_to_index(letter, number);
+    if(p.x() == -1 || p.y() == -1){
+        return QVector2D(-1, -1);
+    }
+    return centers[p.x()][p.y()].at(0);
+}
+
+QPoint chessboard::map_koords_to_index(char letter, char number)
 {
     int y_index = 0;
     int x_index = 0;
@@ -112,10 +129,26 @@ QVector2D chessboard::get_center(char letter, char number)
         }else{
             goto GET_CENTER_END;
         }
-        x_index = map(map(x_index, 0, 7, min_x, max_x), min_x, max_x, 0, 7);
-        y_index = map(map(y_index, 0, 7, min_y, max_y), min_y, max_y, 0, 7);
-        return centers[x_index][y_index].at(0);
+        x_index = ((min_x < 0 ? 8 - min_x : min_x) + x_index) % 8;
+        y_index = ((min_y < 0 ? 8 - min_y : min_y) + y_index) % 8;
+        return QPoint(x_index, y_index);
     }
     GET_CENTER_END:
-    return QVector2D(-1, -1);
+    return QPoint(-1, -1);
+}
+
+QPoint chessboard::map_index_to_koords(int x, int y)
+{
+    if(x < 0 || x > 7 || y < 0 || y > 7){
+        return QPoint(-1, -1);
+    }
+    char x_index = min_x + x;
+    char y_index = min_y + y;
+    if(x_index < 0){
+        x_index = 8 - x_index;
+    }
+    if(y_index < 0){
+        y_index = 8 - y_index;
+    }
+    return QPoint((x_index % 8) + 65, y_index % 8);
 }

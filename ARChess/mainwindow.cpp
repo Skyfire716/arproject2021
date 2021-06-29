@@ -14,8 +14,8 @@
 #include "camera_controller.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+: QMainWindow(parent)
+, ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     openvc_version = ui->openvc_version_label;
@@ -25,6 +25,10 @@ MainWindow::MainWindow(QWidget *parent)
     threshold_slider = ui->threshold_slider_id;
     threshold_value_label = ui->threshold_value_label_ui;
     arwidget = ui->widget3d;
+    ar_container_widget_label = ui->container_widget_label;
+    ar_plane_label = ui->planelabel;
+    ar_window_label = ui->window3dlabel;
+    arwidget_label = ui->widget_label;
     QString version_text;
     version_text = "OpenCV: ";
     version_text.append(CV_VERSION);
@@ -34,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
     connect(cam_control->worker, &camera_worker::image_ready, arwidget->planeTextureImage, &archessbackgound::receive_image);
     connect(cam_control->worker, &camera_worker::chessboard_updated, this, &MainWindow::chessboard_updated);
+    connect(arwidget, &archesswidget::resize, this, &MainWindow::ar_resize);
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();
@@ -66,8 +71,37 @@ QImage MainWindow::mat_to_qimage_ref(cv::Mat &mat, QImage::Format format) {
     return QImage(mat.data, mat.cols, mat.rows, mat.step, format);
 }
 
+QString MainWindow::r(QRect r)
+{
+    QString s;
+    s.append(QString::number(r.topLeft().x()));
+    s.append(", ");
+    s.append(QString::number(r.topLeft().y()));
+    s.append(", ");
+    s.append(MainWindow::r(r.size()));
+    return s;
+}
+
+QString MainWindow::r(QSize s)
+{
+    QString str;
+    str.append("w ");
+    str.append(QString::number(s.width()));
+    str.append(" h ");
+    str.append(QString::number(s.height()));
+    return  str;;
+}
+
 void MainWindow::add_camerabox_item(QString item_name){
     camera_box->addItem(item_name);
+}
+
+void MainWindow::ar_resize(QRect arwidget, QRect windowContainer, QRect window, QSize panel)
+{
+    ar_container_widget_label->setText("M3d Container " + r(windowContainer));
+    ar_plane_label->setText("Plane " + r(panel));
+    ar_window_label->setText("Window " + r(window));
+    arwidget_label->setText("ArWidget " + r(arwidget));
 }
 
 void MainWindow::on_camera_combbox_currentIndexChanged(int index)

@@ -2,7 +2,7 @@
 
 chessboard_controller::chessboard_controller()
 {
-
+    
 }
 
 bool chessboard_controller::add_rect(QVector2D local_offset, QPointF tl_corner, QPointF tr_corner, QPointF bl_corner, QPointF br_corner, QPointF center, bool color)
@@ -31,6 +31,8 @@ bool chessboard_controller::get_origin_color()
 QImage chessboard_controller::get_image()
 {
     QImage img(80, 80, QImage::Format_RGB666);
+    QPoint center = boards[!active].get_origin_index();
+    qDebug() << "Center Coords " << center;
     for(int i = 0; i < 8; i++){
         for(int j = 0; j < 8; j++){
             QColor color;
@@ -41,6 +43,9 @@ QImage chessboard_controller::get_image()
                 color.setRgb(255, 255, 255);
             }else{
                 color.setRgb(255, 0, 0);
+            }
+            if(i == (center.x() % 65) && j == center.y()){
+                color.setRgb(0, 255, 0);
             }
             for(int s = 0; s < 10; s++){
                 for(int k = 0; k < 10; k++){

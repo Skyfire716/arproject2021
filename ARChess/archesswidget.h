@@ -7,6 +7,7 @@
 #include <Qt3DRender>
 #include <QImage>
 #include <QPixmap>
+#include <qboxlayout.h>
 
 class archessbackgound : public Qt3DRender::QPaintedTextureImage{
     Q_OBJECT
@@ -14,13 +15,15 @@ public:
     archessbackgound(Qt3DCore::QNode *parent = nullptr);
     void paint(QPainter *painter) override;
     QWidget *parent_widget;
-
+    QSize paint_area_size;
+    QRect window_area;
+    
 public slots:
     void receive_image(QPixmap img);
-
+    
 private:
     QPixmap background;
-
+    
 };
 
 class archesswidget : public QWidget
@@ -29,14 +32,18 @@ class archesswidget : public QWidget
 public:
     explicit archesswidget(QWidget *parent = nullptr);
     archessbackgound *planeTextureImage;
-
+    
 signals:
-
+    void resize(QRect arwidget, QRect windowContainer, QRect window, QSize panel);
+    
 private:
+    QBoxLayout *layout;
     QWidget *m_3d_window_container;
     Qt3DExtras::Qt3DWindow *m_3d_window;
     Qt3DRender::QCamera *objectsCamera;
-
+    Qt3DRender::QRenderSurfaceSelector *renderSurfaceSelector;
+    float camera_angle_deg = 45;
+    
 protected:
     void resizeEvent(QResizeEvent *event);
 };

@@ -9,7 +9,7 @@
 class chessboard : QObject
 {
     Q_OBJECT
-
+    
 public:
     static const int BLACK = 0;
     static const int WHITE = 1;
@@ -21,16 +21,19 @@ public:
     bool add_field(QVector2D local_offset, QPointF tl_corner, QPointF tr_corner, QPointF bl_corner, QPointF br_corner, QPointF center, bool color);
     bool get_color(char letter, char number);
     QVector2D get_origin();
+    QPoint get_origin_index();
     QVector2D get_center(char letter, char number);
-
+    
 private:
+    QPoint map_koords_to_index(char letter, char number);
+    QPoint map_index_to_koords(int x, int y);
     QList<QVector2D> corners[9][9];
     QList<QVector2D> centers[8][8];
-    bool colors[8][8];
+    char colors[8][8];
     bool cleared;
     QPoint origin_index;
     int max_x, min_x, max_y, min_y;
-
+    
 };
 
 

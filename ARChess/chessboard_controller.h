@@ -18,12 +18,12 @@ public:
     bool get_field(char letter, char number);
     bool get_origin_color();
     QImage get_image();
-
+    
 private:
     chessboard boards[2];
     bool active;
-
-
+    
+    
 };
 
 #endif // CHESSBOARD_CONTROLLER_H

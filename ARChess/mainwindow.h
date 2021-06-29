@@ -26,16 +26,18 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
-const QString EXAMPLE_VIDEO = "Video Hard";
-const QString EXAMPLE_VIDEO_STABEL = "Video Stabel";
-const QString EXAMPLE_VIDEO_MOVING = "Video Moving";
-
+    
+    const QString EXAMPLE_VIDEO = "Video Hard";
+    const QString EXAMPLE_VIDEO_STABEL = "Video Stabel";
+    const QString EXAMPLE_VIDEO_MOVING = "Video Moving";
+    
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     QImage mat_to_qimage_ref(cv::Mat &mat, QImage::Format format);
-
+    QString r(QRect r);
+    QString r(QSize s);
+    
 private slots:
     void on_camera_combbox_currentIndexChanged(int index);
     void on_pushButton_clicked();
@@ -43,14 +45,19 @@ private slots:
     void on_threshold_method_ui_currentIndexChanged(int index);
     void chessboard_updated(QPixmap pix);
     void on_result_image_box_currentIndexChanged(int index);
-
+    
 public slots:
     void add_camerabox_item(QString item_name);
-
+    void ar_resize(QRect arwidget, QRect windowContainer, QRect window, QSize panel);
+    
 private:
     Ui::MainWindow *ui;
     QLabel *openvc_version;
     QLabel *threshold_value_label;
+    QLabel *arwidget_label;
+    QLabel *ar_container_widget_label;
+    QLabel *ar_window_label;
+    QLabel *ar_plane_label;
     QComboBox *camera_box;
     QComboBox *threshold_method_box;
     QComboBox *result_image_picker;
@@ -62,6 +69,6 @@ private:
     QImage::Format format;
     camera_controller *cam_control;
     archesswidget *arwidget;
-
+    
 };
 #endif // MAINWINDOW_H
