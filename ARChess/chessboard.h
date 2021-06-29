@@ -30,7 +30,6 @@ private:
     QList<QVector2D> corners[9][9];
     QList<QVector2D> centers[8][8];
     char colors[8][8];
-    bool cleared;
     QPoint origin_index;
     int max_x, min_x, max_y, min_y;
     

@@ -48,16 +48,11 @@ private slots:
     
 public slots:
     void add_camerabox_item(QString item_name);
-    void ar_resize(QRect arwidget, QRect windowContainer, QRect window, QSize panel);
     
 private:
     Ui::MainWindow *ui;
     QLabel *openvc_version;
     QLabel *threshold_value_label;
-    QLabel *arwidget_label;
-    QLabel *ar_container_widget_label;
-    QLabel *ar_window_label;
-    QLabel *ar_plane_label;
     QComboBox *camera_box;
     QComboBox *threshold_method_box;
     QComboBox *result_image_picker;

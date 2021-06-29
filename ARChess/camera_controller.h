@@ -71,8 +71,7 @@ public:
     QPair<int, int> vec2pair(QVector2D v);
     bool probe_field();
     bool valid_neighbour(cv::Point2f p, cv::Point2f axisA, cv::Point2f axisB);
-    bool probe_neighbours(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos, QList<QVector2D> &no_field, QList<QVector2D> &valid);
-    bool probe_neighbours(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br, QVector2D current_pos, chessboard_controller &chesscontroller, QSet<QPair<int, int>> &no_field, QSet<QPair<int, int>> &valid);
+    bool probe_neighbours(cv::Point2f tl, cv::Point2f tr, cv::Point2f bl, cv::Point2f br, QVector2D current_pos, chessboard_controller &chesscontroller, QSet<QPair<int, int>> &no_field, QSet<QPair<int, int>> &valid);
     bool field_check(cv::Rect rect, cv::Point2f p);
     float intersection_NormalLine_NormalLine(cv::Point2f line_p1, cv::Point2f line_n1, cv::Point2f line_p2, cv::Point2f line_n2);
     float distance_point_to_line(cv::Point2f lineA, cv::Point2f lineB, cv::Point2f p);

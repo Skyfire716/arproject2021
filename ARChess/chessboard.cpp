@@ -12,7 +12,6 @@ void chessboard::clear()
     min_y = 0;
     max_x = 0;
     max_y = 0;
-    cleared = true;
     origin_index.setX(0);
     origin_index.setY(0);
     for(int i = 0; i < 9; i++){
@@ -46,12 +45,6 @@ bool chessboard::add_field(QVector2D local_offset, QPointF tl_corner, QPointF tr
     if(local_offset.x() > 7 || local_offset.x() < -7 || local_offset.y() > 7  || local_offset.y() < -7){
         qDebug() << "Offset out of Range";
         return false;
-    }
-    if(cleared){
-        cleared = false;
-        //origin_index.setX(local_offset.x());
-        //origin_index.setY(local_offset.y());
-        //Kind of indexing mapping
     }
     max_x = (max_x < local_offset.x()) ? local_offset.x() : max_x;
     min_x = (min_x > local_offset.x()) ? local_offset.x() : min_x;

@@ -32,9 +32,7 @@ class archesswidget : public QWidget
 public:
     explicit archesswidget(QWidget *parent = nullptr);
     archessbackgound *planeTextureImage;
-    
-signals:
-    void resize(QRect arwidget, QRect windowContainer, QRect window, QSize panel);
+
     
 private:
     QBoxLayout *layout;

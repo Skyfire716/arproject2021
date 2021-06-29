@@ -71,8 +71,8 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     // Background
     Qt3DCore::QEntity *planeEntity = new Qt3DCore::QEntity(rootEntity);
     Qt3DExtras::QPlaneMesh *planeMesh = new Qt3DExtras::QPlaneMesh(planeEntity);
-    planeMesh->setHeight(1);
-    planeMesh->setWidth(1);
+    planeMesh->setHeight(2);
+    planeMesh->setWidth(2);
     
     Qt3DExtras::QTextureMaterial *planeMaterial = new Qt3DExtras::QTextureMaterial(planeEntity);
     Qt3DRender::QTexture2D *planeTexture = new Qt3DRender::QTexture2D(planeMaterial);
@@ -86,7 +86,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     
     Qt3DCore::QTransform *planeTransform = new Qt3DCore::QTransform(planeEntity);
     planeTransform->setRotationX(90);
-    planeTransform->setTranslation(QVector3D(-0.3, -0.3, 0));
+    planeTransform->setTranslation(QVector3D(0, 0, 0));
     
     planeEntity->addComponent(planeMesh);
     planeEntity->addComponent(planeMaterial);
@@ -115,7 +115,6 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
 
     m_3d_window_container = QWidget::createWindowContainer(m_3d_window);
     m_3d_window_container->setGeometry(QRect(0, 0, planeTextureImage->paint_area_size.width(), planeTextureImage->paint_area_size.height()));
-    //m_3d_window_container->setParent(this);
     layout = new QBoxLayout(QBoxLayout::LeftToRight, this);
     layout->addItem(new QSpacerItem(0, 0));
     layout->addWidget(m_3d_window_container);
@@ -130,7 +129,6 @@ void archesswidget::resizeEvent(QResizeEvent *event)
     float arHeight = planeTextureImage->paint_area_size.height();
     float thisAspectRatio = (float)event->size().width() / event->size().height();
     int widgetStretch, outerStretch;
-    
     if (thisAspectRatio > (arWidth/arHeight))
     {
         layout->setDirection(QBoxLayout::LeftToRight);
@@ -151,12 +149,6 @@ void archesswidget::resizeEvent(QResizeEvent *event)
     m_3d_window_container->setGeometry(m_3d_window->geometry());
     planeTextureImage->window_area = m_3d_window->geometry();
     renderSurfaceSelector->setSurface(m_3d_window);
-    //qDebug() << "Geo This " << this->geometry();
-    //qDebug() << "Geo M_3dWindwos " << m_3d_window->geometry();
-    //qDebug() << "Geo M3 container " << m_3d_window_container->geometry();
-    //qDebug() << "Geo Plane Texture " << planeTextureImage->size();
-    emit resize(QRect(this->frameGeometry().topLeft(), this->frameGeometry().size()), QRect(m_3d_window_container->pos(), m_3d_window_container->frameGeometry().size())
-    , QRect(m_3d_window->framePosition(), m_3d_window->frameGeometry().size()), planeTextureImage->size());
 }
 
 archessbackgound::archessbackgound(Qt3DCore::QNode *parent) : Qt3DRender::QPaintedTextureImage(parent)

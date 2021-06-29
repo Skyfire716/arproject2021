@@ -1,7 +1,6 @@
 #include "camera_worker.h"
-#include <QThread>
 
-camera_worker::camera_worker()
+camera_worker::camera_worker(QObject *parent) : QObject(parent)
 {
-    
+
 }
