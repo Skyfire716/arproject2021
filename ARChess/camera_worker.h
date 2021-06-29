@@ -3,8 +3,10 @@
 
 #include <QObject>
 #include <QThread>
+#include <QPixmap>
 #include <opencv2/opencv.hpp>
 #include "chessboard_controller.h"
+#include "chessboard.h"
 
 class camera_worker : public QObject
 {

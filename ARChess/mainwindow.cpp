@@ -12,6 +12,7 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 #include "camera_controller.h"
+#include "camera_worker.h"
 
 MainWindow::MainWindow(QWidget *parent)
 : QMainWindow(parent)
