@@ -1,11 +1,5 @@
 #include "chessboard.h"
 
-
-chessboard::chessboard()
-{
-    
-}
-
 void chessboard::clear()
 {
     min_x = 0;
@@ -25,6 +19,11 @@ void chessboard::clear()
             centers[i][j].clear();
         }
     }
+}
+
+cv::Point2f chessboard::qvec2d2cv_point2f(QVector2D v)
+{
+    return cv::Point2f(v.x(), v.y());
 }
 
 int chessboard::map(int x, int in_min, int in_max, int out_min, int out_max)
@@ -50,8 +49,6 @@ bool chessboard::add_field(QVector2D local_offset, QPointF tl_corner, QPointF tr
     min_x = (min_x > local_offset.x()) ? local_offset.x() : min_x;
     max_y = (max_y < local_offset.y()) ? local_offset.y() : max_y;
     min_y = (min_y > local_offset.y()) ? local_offset.y() : min_y;
-    qDebug() << "MIN MAX X " << QString::number(min_x) << QString::number(max_x);
-    qDebug() << "MIN MAX Y " << QString::number(min_y) << QString::number(max_y);
     if(max_x - min_x > 8 || max_y - min_y > 8){
         qDebug() << "Error in Indexes";
         return false;
@@ -64,7 +61,6 @@ bool chessboard::add_field(QVector2D local_offset, QPointF tl_corner, QPointF tr
     if(y_index < 0){
         y_index = 8 + y_index;
     }
-    qDebug() << "Index " << x_index << " " << y_index;
     if(colors[x_index][y_index] != chessboard::UNDEFINED && colors[x_index][y_index] != color){
         qDebug() << "Suspicious coloring";
         return false;
@@ -88,6 +84,35 @@ bool chessboard::get_color(char letter, char number)
         return chessboard::UNDEFINED;
     }
     return colors[p.x()][p.y()];
+}
+
+void chessboard::drawBoard(cv::Mat image)
+{
+    for(int i = 0; i < 8; i++){
+        for(int j = 0; j < 8; j++){
+            if(!corners[i][j].empty()){
+                cv::circle(image, qvec2d2cv_point2f(corners[i][j][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+            }
+            if(!corners[i + 1][j].empty()){
+                cv::circle(image, qvec2d2cv_point2f(corners[i + 1][j][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+            }
+            if(!corners[i][j + 1].empty()){
+                cv::circle(image, qvec2d2cv_point2f(corners[i][j + 1][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+            }
+            if(!corners[i + 1][j + 1].empty()){
+                cv::circle(image, qvec2d2cv_point2f(corners[i + 1][j + 1][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+            }
+            if(!centers[i][j].empty()){
+                if(colors[i][j] == chessboard::BLACK){
+                    cv::circle(image, qvec2d2cv_point2f(centers[i][j][0]), 5, cv::Scalar(255, 255, 255), 3, cv::LINE_8);
+                }else if(colors[i][j] == chessboard::WHITE){
+                    cv::circle(image, qvec2d2cv_point2f(centers[i][j][0]), 5, cv::Scalar(0, 0, 0), 3, cv::LINE_8);
+                }else{
+                    cv::circle(image, qvec2d2cv_point2f(centers[i][j][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                }
+            }
+        }
+    }
 }
 
 QVector2D chessboard::get_origin()
@@ -144,4 +169,20 @@ QPoint chessboard::map_index_to_koords(int x, int y)
         y_index = 8 - y_index;
     }
     return QPoint((x_index % 8) + 65, y_index % 8);
+}
+
+chessboard::chessboard(QObject *parent) : QObject(parent)
+{}
+
+chessboard::chessboard(const chessboard &board)
+{
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+            if(i < 8 && j < 8){
+                this->centers[i][j].append(board.centers[i][j]);
+                this->colors[i][j] = board.colors[i][j];
+            }
+            this->corners[i][j].append(board.corners[i][j]);
+        }
+    }
 }

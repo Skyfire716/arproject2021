@@ -16,6 +16,16 @@ void chessboard_controller::switch_board()
     boards[!active].clear();
 }
 
+void chessboard_controller::clear_current()
+{
+    boards[!active].clear();
+}
+
+chessboard chessboard_controller::get_current_board()
+{
+    return boards[!active];
+}
+
 bool chessboard_controller::get_field(char letter, char number)
 {
     return boards[!active].get_color(letter, number);

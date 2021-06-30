@@ -6,7 +6,7 @@
 #include <QPixmap>
 #include <opencv2/opencv.hpp>
 #include "chessboard_controller.h"
-#include "chessboard.h"
+//#include "chessboard.h"
 
 class camera_worker : public QObject
 {
@@ -104,7 +104,6 @@ private:
     void initialize_camera();
     QList<int> cv_cameras;
     cv::VideoCapture cv_camera;
-    QList<QPair<QVector2D, bool>> chessboard;
     chessboard_controller my_chessboard_controller;
 };
 
