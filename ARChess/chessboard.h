@@ -6,6 +6,9 @@
 #include <QtDebug>
 #include <QtMath>
 #include <QLineF>
+#include <QMatrix4x4>
+#include <QGenericMatrix>
+#include <QQuaternion>
 #include <opencv2/opencv.hpp>
 
 class chessboard : QObject
@@ -28,6 +31,8 @@ public:
     QVector2D get_origin();
     QPoint get_origin_index();
     QVector2D get_center(char letter, char number);
+    cv::Mat get_rotation_matrix();
+    QQuaternion get_rotation_matrix(bool placeholder);
     
 private:
     QPoint map_koords_to_index(char letter, char number);

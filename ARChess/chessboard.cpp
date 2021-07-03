@@ -151,6 +151,76 @@ QVector2D chessboard::get_center(char letter, char number)
     return centers[p.x()][p.y()].at(0);
 }
 
+cv::Mat chessboard::get_rotation_matrix()
+{
+    cv::Point2f dstPoints[4];
+    dstPoints[0].x = -0.5; dstPoints[0].y = -0.5;
+    dstPoints[1].x = -0.5; dstPoints[1].y = 0.5;
+    dstPoints[2].x = 0.5; dstPoints[2].y = 0.5;
+    dstPoints[3].x = 0.5; dstPoints[3].y = -0.5;
+    cv::Mat homographyMatrix(cv::Size(3, 3), CV_32FC1);
+    cv::Point2f targetCorners[4];
+    targetCorners[0] = qvec2d2cv_point2f(corners[0][0][0]);
+    targetCorners[1] = qvec2d2cv_point2f(corners[1][0][0]);
+    targetCorners[2] = qvec2d2cv_point2f(corners[1][1][0]);
+    targetCorners[3] = qvec2d2cv_point2f(corners[0][1][0]);
+    homographyMatrix = cv::getPerspectiveTransform(dstPoints, targetCorners);
+    return homographyMatrix;
+}
+
+QQuaternion chessboard::get_rotation_matrix(bool placeholder)
+{
+    cv::Mat homographyMatrix = get_rotation_matrix();
+    QMatrix4x4 rot_mat;
+    QVector4D row1(homographyMatrix.at<float>(0, 0), homographyMatrix.at<float>(0, 1), homographyMatrix.at<float>(0, 2), 0);
+    QVector4D row2(homographyMatrix.at<float>(1, 0), homographyMatrix.at<float>(1, 1), homographyMatrix.at<float>(1, 2), 0);
+    QVector4D row3(homographyMatrix.at<float>(2, 0), homographyMatrix.at<float>(2, 1), homographyMatrix.at<float>(2, 2), 0);
+    QVector4D row4(0, 0, 0, 1);
+    rot_mat.setRow(0, row1);
+    rot_mat.setRow(1, row2);
+    rot_mat.setRow(2, row3);
+    rot_mat.setRow(3, row4);
+    QGenericMatrix<3, 3, float> mat3 = rot_mat.toGenericMatrix<3, 3>();
+    QQuaternion rot = QQuaternion::fromRotationMatrix(mat3);
+
+/*
+    double params[4] = {};
+    cv::Mat _A_matrix = cv::Mat::zeros(3, 3, CV_64FC1);   // intrinsic camera parameters
+    _A_matrix.at<double>(0, 0) = params[0];       //      [ fx   0  cx ]
+    _A_matrix.at<double>(1, 1) = params[1];       //      [  0  fy  cy ]
+    _A_matrix.at<double>(0, 2) = params[2];       //      [  0   0   1 ]
+    _A_matrix.at<double>(1, 2) = params[3];
+    _A_matrix.at<double>(2, 2) = 1;
+    cv::Mat _R_matrix = cv::Mat::zeros(3, 3, CV_64FC1);   // rotation matrix
+    cv::Mat _t_matrix = cv::Mat::zeros(3, 1, CV_64FC1);   // translation matrix
+    cv::Mat _P_matrix = cv::Mat::zeros(3, 4, CV_64FC1);   // rotation-translation matrix
+    const std::vector<cv::Point3f> list_points3d;       // list with model 3D coordinates
+     const std::vector<cv::Point2f> list_points2d;        // list with scene 2D coordinates
+     int flags;
+     cv::Mat inliers;
+     int iterationsCount;     // PnP method; inliers container
+     float reprojectionError;
+     float confidence;
+
+
+    cv::Mat distCoeffs = cv::Mat::zeros(4, 1, CV_64FC1);    // vector of distortion coefficients
+    cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64FC1);          // output rotation vector
+    cv::Mat tvec = cv::Mat::zeros(3, 1, CV_64FC1);          // output translation vector
+    bool useExtrinsicGuess = false;   // if true the function uses the provided rvec and tvec values as
+                                      // initial approximations of the rotation and translation vectors
+    cv::solvePnPRansac( list_points3d, list_points2d, _A_matrix, distCoeffs, rvec, tvec,
+                        useExtrinsicGuess, iterationsCount, reprojectionError, confidence,
+                        inliers, flags );
+
+    cv::Rodrigues(rvec,_R_matrix);                   // converts Rotation Vector to Matrix
+    _t_matrix = tvec;
+*/
+
+    rot.normalize();
+
+    return rot;
+}
+
 QPoint chessboard::map_koords_to_index(char letter, char number)
 {
     int y_index = 0;

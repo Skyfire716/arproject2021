@@ -8,6 +8,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <qboxlayout.h>
+#include <QQuaternion>
 
 class archessbackgound : public Qt3DRender::QPaintedTextureImage{
     Q_OBJECT
@@ -33,8 +34,12 @@ public:
     explicit archesswidget(QWidget *parent = nullptr);
     archessbackgound *planeTextureImage;
 
+public slots:
+    void ar_rotation(QQuaternion q);
     
 private:
+    Qt3DCore::QTransform *monkeyTransform;
+    Qt3DCore::QTransform *fieldTransform;
     QBoxLayout *layout;
     QWidget *m_3d_window_container;
     Qt3DExtras::Qt3DWindow *m_3d_window;

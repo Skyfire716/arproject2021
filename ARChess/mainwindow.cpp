@@ -35,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
     connect(cam_control->worker, &camera_worker::image_ready, arwidget->planeTextureImage, &archessbackgound::receive_image);
     connect(cam_control->worker, &camera_worker::chessboard_updated, this, &MainWindow::chessboard_updated);
+    connect(cam_control->worker, &camera_worker::new_ar_rotation, arwidget, &archesswidget::ar_rotation);
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();

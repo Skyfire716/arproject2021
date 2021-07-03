@@ -18,6 +18,7 @@ public:
     void clear_current();
     chessboard get_current_board();
     bool get_field(char letter, char number);
+    QQuaternion get_ar_rotation();
     bool get_origin_color();
     QImage get_image();
     

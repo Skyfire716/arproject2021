@@ -31,6 +31,11 @@ bool chessboard_controller::get_field(char letter, char number)
     return boards[!active].get_color(letter, number);
 }
 
+QQuaternion chessboard_controller::get_ar_rotation()
+{
+    return boards[!active].get_rotation_matrix(false);
+}
+
 bool chessboard_controller::get_origin_color()
 {
     QVector2D origin = boards[!active].get_origin();

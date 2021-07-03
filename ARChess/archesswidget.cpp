@@ -92,8 +92,9 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     planeEntity->addComponent(planeMaterial);
     planeEntity->addComponent(planeTransform);
     planeEntity->addComponent(backgroundLayer);
-    
-    /*
+
+
+/*
     Qt3DCore::QEntity *monkeyEntity = new Qt3DCore::QEntity(rootEntity);
     Qt3DRender::QMesh *monkeyMesh = new Qt3DRender::QMesh();
     monkeyMesh->setSource(QUrl("qrc:/models/resources/models/monkey.stl"));
@@ -102,7 +103,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     material->setAmbient(QColor::fromRgbF(0.817308, 0.817308, 0.817308));
     material->setDiffuse(QColor::fromRgbF(0.800000, 0.242753, 0.008774));
     material->setSpecular(QColor::fromRgbF(0.817308, 0.817308, 0.817308));
-    Qt3DCore::QTransform *monkeyTransform = new Qt3DCore::QTransform;
+    monkeyTransform = new Qt3DCore::QTransform;
     monkeyTransform->setScale3D(QVector3D(1, 1, 1));
     monkeyTransform->setTranslation(QVector3D(0, 0, 5));
     monkeyTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), 90.0f) * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 180.0f));
@@ -110,7 +111,27 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     monkeyEntity->addComponent(monkeyTransform);
     monkeyEntity->addComponent(material);
     monkeyEntity->addComponent(objectsLayer);
-    */
+*/
+
+
+    Qt3DCore::QEntity *fieldEntity = new Qt3DCore::QEntity(rootEntity);
+    Qt3DExtras::QPlaneMesh *fieldMesh = new Qt3DExtras::QPlaneMesh(fieldEntity);
+    fieldMesh->setHeight(3.2);
+    fieldMesh->setWidth(3.2);
+
+    Qt3DExtras::QPhongMaterial *fieldMaterial = new Qt3DExtras::QPhongMaterial(fieldEntity);
+    fieldMaterial->setAmbient(QColor::fromRgbF(1.0, 1.0, 1.0, 1.0));
+    fieldMaterial->setDiffuse(QColor::fromRgbF(1.0, 1.0, 1.0, 1.0));
+    fieldMaterial->setSpecular(QColor::fromRgbF(1.0, 1.0, 1.0, 1.0));
+    fieldTransform = new Qt3DCore::QTransform(fieldEntity);
+    fieldTransform->setScale(1);
+    fieldTransform->setRotationX(-90);
+    fieldTransform->setTranslation(QVector3D(0, 0, 3));
+
+    fieldEntity->addComponent(fieldMesh);
+    fieldEntity->addComponent(fieldMaterial);
+    fieldEntity->addComponent(fieldTransform);
+    fieldEntity->addComponent(objectsLayer);
 
 
     m_3d_window_container = QWidget::createWindowContainer(m_3d_window);
@@ -121,6 +142,13 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     layout->addItem(new QSpacerItem(0, 0));
     layout->setContentsMargins(0, 0, 0, 0);
     planeTextureImage->update();
+}
+
+void archesswidget::ar_rotation(QQuaternion q)
+{
+    qDebug() << "New Rot";
+    //monkeyTransform->setRotation(q * QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), 90.0f) * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 180.0f));
+    fieldTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), -90) * q.inverted());
 }
 
 void archesswidget::resizeEvent(QResizeEvent *event)

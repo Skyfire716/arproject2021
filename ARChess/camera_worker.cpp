@@ -841,6 +841,7 @@ void camera_worker::run()
                                 cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
                                 emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
+                                emit new_ar_rotation(my_chessboard_controller.get_ar_rotation());
                                 my_chessboard_controller.switch_board();
                                 is_first = false;
                                 this->thread()->msleep(750);
