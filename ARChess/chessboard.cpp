@@ -65,7 +65,7 @@ bool chessboard::add_field(QVector2D local_offset, QPointF tl_corner, QPointF tr
         qDebug() << "Suspicious coloring";
         return false;
     }
-    
+    qDebug() << "Adding " << local_offset << " with center " << center << " at " << x_index << " " << y_index;
     corners[x_index][y_index + 1].push_back(QVector2D(tl_corner));
     corners[x_index + 1][y_index + 1].push_back(QVector2D(tr_corner));
     corners[x_index][y_index].push_back(QVector2D(bl_corner));
@@ -91,24 +91,41 @@ void chessboard::drawBoard(cv::Mat image)
     for(int i = 0; i < 8; i++){
         for(int j = 0; j < 8; j++){
             if(!corners[i][j].empty()){
-                cv::circle(image, qvec2d2cv_point2f(corners[i][j][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                for(QVector2D v : corners[i][j]){
+                    cv::circle(image, qvec2d2cv_point2f(v), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                }
             }
             if(!corners[i + 1][j].empty()){
-                cv::circle(image, qvec2d2cv_point2f(corners[i + 1][j][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                for(QVector2D v : corners[i + 1][j]){
+                    cv::circle(image, qvec2d2cv_point2f(v), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                }
             }
             if(!corners[i][j + 1].empty()){
-                cv::circle(image, qvec2d2cv_point2f(corners[i][j + 1][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                for(QVector2D v : corners[i][j + 1]){
+                    cv::circle(image, qvec2d2cv_point2f(v), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                }
             }
             if(!corners[i + 1][j + 1].empty()){
-                cv::circle(image, qvec2d2cv_point2f(corners[i + 1][j + 1][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                for(QVector2D v : corners[i + 1][j + 1]){
+                    cv::circle(image, qvec2d2cv_point2f(v), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                }
             }
             if(!centers[i][j].empty()){
-                if(colors[i][j] == chessboard::BLACK){
-                    cv::circle(image, qvec2d2cv_point2f(centers[i][j][0]), 5, cv::Scalar(255, 255, 255), 3, cv::LINE_8);
-                }else if(colors[i][j] == chessboard::WHITE){
-                    cv::circle(image, qvec2d2cv_point2f(centers[i][j][0]), 5, cv::Scalar(0, 0, 0), 3, cv::LINE_8);
-                }else{
-                    cv::circle(image, qvec2d2cv_point2f(centers[i][j][0]), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                QString name;
+                name.append(QString::number(i));
+                name.append(", ");
+                name.append(QString::number(j));
+                for(QVector2D v : centers[i][j]){
+                    //cv::putText(image, name.toStdString(), qvec2d2cv_point2f(v) - cv::Point2f(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                }
+                for(QVector2D v : centers[i][j]){
+                    if(colors[i][j] == chessboard::BLACK){
+                        cv::circle(image, qvec2d2cv_point2f(v), 5, cv::Scalar(255, 255, 255), 3, cv::LINE_8);
+                    }else if(colors[i][j] == chessboard::WHITE){
+                        cv::circle(image, qvec2d2cv_point2f(v), 5, cv::Scalar(0, 0, 0), 3, cv::LINE_8);
+                    }else{
+                        cv::circle(image, qvec2d2cv_point2f(v), 5, cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+                    }
                 }
             }
         }
@@ -169,6 +186,15 @@ QPoint chessboard::map_index_to_koords(int x, int y)
         y_index = 8 - y_index;
     }
     return QPoint((x_index % 8) + 65, y_index % 8);
+}
+
+QVector2D chessboard::mean_vec(QList<QVector2D> list)
+{
+    QVector2D v(0, 0);
+    for(QVector2D p : list){
+        v += p;
+    }
+    return (v / list.length());
 }
 
 chessboard::chessboard(QObject *parent) : QObject(parent)

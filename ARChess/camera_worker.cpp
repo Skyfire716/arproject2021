@@ -125,7 +125,7 @@ int camera_worker::neighbour_rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Po
     return color;
 }
 
-int camera_worker::neighbour_validation_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br)
+int camera_worker::neighbour_validation_probing(cv::Point2f tl, cv::Point2f tr, cv::Point2f bl, cv::Point2f br)
 {
     cv::Point2f center_point = intersection_P2PLine_P2PLine(tl, br, bl, tr);
     cv::Point2f lineAC = line_P2P(tl, tr);
@@ -398,6 +398,13 @@ bool camera_worker::probe_neighbours(cv::Point2f tl, cv::Point2f tr, cv::Point2f
         //cv::putText(camera_image, "C", center_point, cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 0, 255), 4, cv::LINE_8);
         return false;
     }
+    QPair<int, int> p(current_pos.x(), current_pos.y());
+    //!valid.contains(p) && !no_field.contains(p) &&
+    if(!chesscontroller.add_rect(current_pos, cv_point2f2qpoint(tl), cv_point2f2qpoint(tr), cv_point2f2qpoint(bl), cv_point2f2qpoint(br), cv_point2f2qpoint(center_point), center_color)){
+        return false;
+    }else {
+        qDebug() << "Was added at Start";
+    }
     cv::Point2f lineAC = line_P2P(tl, tr);
     cv::Point2f lineAB = line_P2P(tl, bl);
     cv::Point2f lineCD = line_P2P(tr, br);
@@ -418,24 +425,46 @@ bool camera_worker::probe_neighbours(cv::Point2f tl, cv::Point2f tr, cv::Point2f
     cv::Point2f trrn = line_probeing(tr, lengthAC, lineAC, normalLineAC);
     cv::Point2f brrn = line_probeing(br, lengthBD, lineBD, normalLineBD);
     cv::Point2f brbn = line_probeing(br, lengthCD, lineCD, normalLineCD);
-    QPointF top_center = cv_point2f2qpoint(intersection_P2PLine_P2PLine(tr, brrn, trrn, br));
+    //       |         TLTN         TRTN           |
+    //       |           |            |            |
+    //       |           |            |            |
+    //       |           |    top     |            |
+    //       |           |            |            |
+    //       |           |            |            |
+    //-----TLLN----------TL----------TR----------TRRN
+    //       |           |            |            |
+    //       |           |            |            |
+    //       |   left    |  current   |  right     |
+    //       |           |            |            |
+    //       |           |            |            |
+    //-----BLLN----------BL----------BR----------BRRN
+    //       |           |            |            |
+    //       |           |            |            |
+    //       |           |   bottom   |            |
+    //       |           |            |            |
+    //       |         BLBN         BRBN           |
+
+    QPointF top_center = cv_point2f2qpoint(intersection_P2PLine_P2PLine(tltn, tr, trtn, tl));
     QPointF bottom_center = cv_point2f2qpoint(intersection_P2PLine_P2PLine(bl, brbn, br, blbn));
     QPointF left_center = cv_point2f2qpoint(intersection_P2PLine_P2PLine(tlln, bl, tl, blln));
-    QPointF right_center = cv_point2f2qpoint(intersection_P2PLine_P2PLine(tltn, tr, trtn, tl));
+    QPointF right_center = cv_point2f2qpoint(intersection_P2PLine_P2PLine(tr, brrn, trrn, br));
     QVector2D top = QVector2D(current_pos.x(), current_pos.y() + 1);
     QVector2D right = QVector2D(current_pos.x() + 1, current_pos.y());
     QVector2D bottom = QVector2D(current_pos.x(), current_pos.y() - 1);
     QVector2D left = QVector2D(current_pos.x() - 1, current_pos.y());
     int counter = 0;
-    int left_neighbour_color = neighbour_validation_probing(tlln, blln, tl, bl);
-    int right_neighbour_color = neighbour_validation_probing(tr, br, trrn, brrn);
-    int top_neighbour_color = neighbour_validation_probing(tltn, tl, trtn, tr);
-    int bottom_neighbour_color = neighbour_validation_probing(bl, blbn, br, brbn);
+    int left_neighbour_color = neighbour_validation_probing(tlln, tl, blln, bl);
+    int right_neighbour_color = neighbour_validation_probing(tr, trrn, br, brrn);
+    int top_neighbour_color = neighbour_validation_probing(tltn, trtn, tl, tr);
+    int bottom_neighbour_color = neighbour_validation_probing(bl, br, blbn, brbn);
     if(!valid.contains(vec2pair(left)) && !no_field.contains(vec2pair(left)) && (center_color != left_neighbour_color)){
         if(left_neighbour_color == 2){
             no_field.insert(vec2pair(left));
         }else{
-            if(chesscontroller.add_rect(left, QPointF(tlln.x, tlln.y), QPointF(tl.x, tl.y), QPointF(blln.x, blln.y), QPointF(bl.x, bl.y), left_center, left_neighbour_color)){
+            if(left.x() == 1 && left.y() == 0){
+                qDebug() << "ALARM " << current_pos << " Current Pos " << cv_point2f2qvec2d(center_point) << " left " << left;
+            }
+            if(chesscontroller.add_rect(left, cv_point2f2qpoint(tlln), cv_point2f2qpoint(tl), cv_point2f2qpoint(blln), cv_point2f2qpoint(bl), left_center, left_neighbour_color)){
                 counter += 1;
                 valid.insert(vec2pair(left));
                 probe_neighbours(tlln, tl, blln, bl, left, chesscontroller, no_field, valid);
@@ -446,6 +475,9 @@ bool camera_worker::probe_neighbours(cv::Point2f tl, cv::Point2f tr, cv::Point2f
         if(right_neighbour_color == 2){
             no_field.insert(vec2pair(right));
         }else{
+            if(right.x() == 1 && right.y() == 0){
+                qDebug() << "ALARM " << current_pos << " Current Pos " << cv_point2f2qvec2d(center_point) << " right " << right;
+            }
             if(chesscontroller.add_rect(right, QPointF(tr.x, tr.y), QPointF(trrn.x, trrn.y), QPointF(br.x, br.y), QPointF(brrn.x, brrn.y), right_center, right_neighbour_color)){
                 valid.insert(vec2pair(right));
                 counter += 1;
@@ -457,6 +489,9 @@ bool camera_worker::probe_neighbours(cv::Point2f tl, cv::Point2f tr, cv::Point2f
         if(top_neighbour_color == 2){
             no_field.insert(vec2pair(top));
         }else{
+            if(top.x() == 1 && top.y() == 0){
+                qDebug() << "ALARM " << current_pos << " Current Pos " << cv_point2f2qvec2d(center_point) << " top " << top;
+            }
             if(chesscontroller.add_rect(top, QPointF(tltn.x, tltn.y), QPointF(trtn.x, trtn.y), QPointF(tl.x, tl.y), QPointF(tr.x, tr.y), top_center, top_neighbour_color)){
                 valid.insert(vec2pair(top));
                 counter += 1;
@@ -468,6 +503,9 @@ bool camera_worker::probe_neighbours(cv::Point2f tl, cv::Point2f tr, cv::Point2f
         if(bottom_neighbour_color == 2){
             no_field.insert(vec2pair(bottom));
         }else{
+            if(bottom.x() == 1 && bottom.y() == 0){
+                qDebug() << "ALARM " << current_pos << " Current Pos " << cv_point2f2qvec2d(center_point) << " bottom " << bottom;
+            }
             if(chesscontroller.add_rect(bottom, QPointF(bl.x, bl.y), QPointF(br.x, br.y), QPointF(blbn.x, blbn.y), QPointF(brbn.x, brbn.y), bottom_center, bottom_neighbour_color == 0)){
                 counter += 1;
                 valid.insert(vec2pair(bottom));
@@ -641,25 +679,26 @@ void camera_worker::run()
                     QString filename = "";
                     QString loading_file = "";
                     switch (new_cv_index) {
-                        case -1: filename.append("/archess_hard.mp4");
-                        loading_file.append(":/videos/resources/videos/VID_20210603_121318.mp4");
-                        threshold_value = 68;
-                        break;
-                        case -2: filename.append("/archess_stabel.mp4");
-                        loading_file.append(":/videos/resources/videos/stabel_chessboard.mp4");
-                        threshold_value = 140;
-                        break;
+                        case -1:
+                            filename.append("/archess_hard.mp4");
+                            loading_file.append(":/videos/resources/videos/VID_20210603_121318.mp4");
+                            threshold_value = 68;
+                            break;
+                        case -2:
+                            filename.append("/archess_stabel.mp4");
+                            loading_file.append(":/videos/resources/videos/stabel_chessboard.mp4");
+                            threshold_value = 140;
+                            break;
                         case -3:
                             filename.append("/archess_moving.mp4");
                             loading_file.append(":/videos/resources/videos/moving_chessboard.mp4");
-                            threshold_value = 140;
+                            threshold_value = 64;
                             break;
                     }
                     const QString tempFile = tempDir.path() +  filename;
                     if(QFile::copy(loading_file, tempFile)){
                         qDebug() << "Mp4 " << tempFile;
                         qDebug() << "Open? " << cv_camera.open(tempFile.toStdString());
-                        cv_camera.set(cv::CAP_PROP_FPS, 5);
                     }
                 }
             }else{
@@ -759,11 +798,6 @@ void camera_worker::run()
                             counter /= (unsigned int) abs(point_distance(*c, *b));
                         }
                         if(is_first){
-                            cv::line(camera_image, *a, *c, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
-                            cv::line(camera_image, *a, *b, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
-                            cv::line(camera_image, *c, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
-                            cv::line(camera_image, *b, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
-                            cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
                             char fields_found = 0;
                             unsigned char counterArray[4];
                             counterArray[COUNTER_BL] = counterArray[COUNTER_BR] = counterArray[COUNTER_TR] = counterArray[COUNTER_TL] = 0;
@@ -798,24 +832,24 @@ void camera_worker::run()
                             //qDebug() << "Valid StartPoint " << probe_neighbours(*a, *c, *b, *d, QVector2D(0, 0), no_field, valid);
                             qDebug() << "Valid StartPoint " << probe_neighbours(*a, *c, *b, *d, QVector2D(0, 0), my_chessboard_controller, no_field, valid);
                             //my_chessboard_controller.add_rect(QVector2D(0, 0), QPointF(a->x, a->y), QPointF(c->x, c->y), QPointF(b->x, b->y), QPointF(d->x, d->y), QPointF(center_point.x, center_point.y), (check_color(threshold_image, center_point) == 0));
-                            qDebug() << "Valid fields " << valid.size();
+                            //qDebug() << "Valid fields " << valid.size();
                             if(valid.size() >= 64){
+                                cv::line(camera_image, *a, *c, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
+                                cv::line(camera_image, *a, *b, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
+                                cv::line(camera_image, *c, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
+                                cv::line(camera_image, *b, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
+                                cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
                                 emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
-                                //drawChessboard(my_chessboard_controller.get_current_board());
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 my_chessboard_controller.switch_board();
                                 is_first = false;
+                                this->thread()->msleep(750);
                             }else{
                                 my_chessboard_controller.clear_current();
                             }
 
                             //this->thread()->msleep(750);
                         }
-                    }
-                    if(counter <= (unsigned int) threshold_value){
-                        //cv::rectangle(camera_image, boundingRects[k], cv::Scalar(0, 0, 0), 4);//Black
-                    }else{
-                        //cv::rectangle(camera_image, boundingRects[k], cv::Scalar(255, 255, 255), 4);//White
                     }
                     //cv::polylines(camera_image, approx_contour, true, color, 4);
                 }

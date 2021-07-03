@@ -167,6 +167,10 @@ void archessbackgound::paint(QPainter *painter)
 
 void archessbackgound::receive_image(QPixmap img)
 {
+    if(img.size() != this->background.size()){
+        this->parent_widget->resize(1, 1);
+        this->parent_widget->resize(this->background.size());
+    }
     this->background = img;
     this->paint_area_size = this->background.size();
     this->setSize(this->paint_area_size);

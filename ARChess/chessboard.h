@@ -5,6 +5,7 @@
 #include <QList>
 #include <QtDebug>
 #include <QtMath>
+#include <QLineF>
 #include <opencv2/opencv.hpp>
 
 class chessboard : QObject
@@ -31,6 +32,7 @@ public:
 private:
     QPoint map_koords_to_index(char letter, char number);
     QPoint map_index_to_koords(int x, int y);
+    QVector2D mean_vec(QList<QVector2D> list);
     QList<QVector2D> corners[9][9];
     QList<QVector2D> centers[8][8];
     char colors[8][8];

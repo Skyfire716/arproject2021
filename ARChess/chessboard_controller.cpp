@@ -51,8 +51,10 @@ QImage chessboard_controller::get_image()
                 color.setRgb(0, 0, 0);
             }else if(board_color == chessboard::WHITE){
                 color.setRgb(255, 255, 255);
-            }else{
+            }else if(board_color == chessboard::UNDEFINED){
                 color.setRgb(255, 0, 0);
+            }else{
+                color.setRgb(0, 0, 255);
             }
             if(i == (center.x() % 65) && j == center.y()){
                 color.setRgb(0, 255, 0);

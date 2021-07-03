@@ -49,7 +49,7 @@ public:
     float point_distance(cv::Point2f a, cv::Point2f b);
     int get_ordered_points(cv::Rect rect, std::vector<cv::Point> points);
     int neighbour_rect_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br);
-    int neighbour_validation_probing(cv::Point2f tl, cv::Point2f bl, cv::Point2f tr, cv::Point2f br);
+    int neighbour_validation_probing(cv::Point2f tl, cv::Point2f tr, cv::Point2f bl, cv::Point2f br);
     QPointF cv_point2f2qpoint(cv::Point2f p);
     QVector2D cv_point2f2qvec2d(cv::Point2f p);
     cv::Point2f line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized);
