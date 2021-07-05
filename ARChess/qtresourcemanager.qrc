@@ -72,5 +72,6 @@
         <file>resources/models/monkey.stl</file>
         <file>resources/models/Monkey.fbx</file>
         <file>resources/models/monkey.mtl</file>
+        <file>resources/models/bauer.stl</file>
     </qresource>
 </RCC>

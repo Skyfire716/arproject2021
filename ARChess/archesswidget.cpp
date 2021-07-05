@@ -113,6 +113,22 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     monkeyEntity->addComponent(objectsLayer);
 */
 
+    Qt3DCore::QEntity *bauerEntity = new Qt3DCore::QEntity(rootEntity);
+    Qt3DRender::QMesh *bauerMesh = new Qt3DRender::QMesh();
+    bauerMesh->setSource(QUrl("qrc:/models/resources/models/bauer.stl"));
+
+    Qt3DExtras::QPhongMaterial *material = new Qt3DExtras::QPhongMaterial(bauerEntity);
+    material->setAmbient(QColor::fromRgbF(0.817308, 0.817308, 0.817308));
+    material->setDiffuse(QColor::fromRgbF(0.800000, 0.242753, 0.008774));
+    material->setSpecular(QColor::fromRgbF(0.817308, 0.817308, 0.817308));
+    bauerTransform = new Qt3DCore::QTransform;
+    bauerTransform->setScale3D(QVector3D(1, 1, 1));
+    bauerTransform->setTranslation(QVector3D(0, 0, 5));
+    bauerTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), 90.0f) * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 180.0f));
+    bauerEntity->addComponent(bauerMesh);
+    bauerEntity->addComponent(bauerTransform);
+    bauerEntity->addComponent(material);
+    bauerEntity->addComponent(objectsLayer);
 
     Qt3DCore::QEntity *fieldEntity = new Qt3DCore::QEntity(rootEntity);
     Qt3DExtras::QPlaneMesh *fieldMesh = new Qt3DExtras::QPlaneMesh(fieldEntity);

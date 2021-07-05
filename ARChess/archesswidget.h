@@ -39,6 +39,7 @@ public slots:
     
 private:
     Qt3DCore::QTransform *monkeyTransform;
+    Qt3DCore::QTransform *bauerTransform;
     Qt3DCore::QTransform *fieldTransform;
     QBoxLayout *layout;
     QWidget *m_3d_window_container;
