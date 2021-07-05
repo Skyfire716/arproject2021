@@ -33,7 +33,10 @@ bool chessboard_controller::get_field(char letter, char number)
 
 QQuaternion chessboard_controller::get_ar_rotation()
 {
-    return boards[!active].get_rotation_matrix(false);
+    QPair<cv::Mat, cv::Mat> pair = boards[!active].get_rotation_translation();
+    cv::Mat rot = pair.first;
+    cv::Mat trans = pair.second;
+    return boards[!active].cv_mat2qquaternion(rot);
 }
 
 bool chessboard_controller::get_origin_color()
@@ -45,6 +48,7 @@ bool chessboard_controller::get_origin_color()
 
 QImage chessboard_controller::get_image()
 {
+    qDebug() << "normal " << boards[!active].get_origin_normal();
     QImage img(80, 80, QImage::Format_RGB666);
     QPoint center = boards[!active].get_origin_index();
     qDebug() << "Center Coords " << center;

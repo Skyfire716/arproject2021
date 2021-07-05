@@ -839,9 +839,13 @@ void camera_worker::run()
                                 cv::line(camera_image, *c, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
                                 cv::line(camera_image, *b, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
                                 cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
-                                emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
+                                //emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 emit new_ar_rotation(my_chessboard_controller.get_ar_rotation());
+                                cv::Mat imageMarker(cv::Size(200, 200), camera_image.type());
+                                cv::warpPerspective(camera_image, imageMarker, my_chessboard_controller.get_current_board().get_rotation_matrix(), cv::Size(200, 200));
+                                QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);
+                                emit chessboard_updated(QPixmap::fromImage(img));
                                 my_chessboard_controller.switch_board();
                                 is_first = false;
                                 this->thread()->msleep(750);

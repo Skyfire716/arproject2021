@@ -26,6 +26,58 @@ cv::Point2f chessboard::qvec2d2cv_point2f(QVector2D v)
     return cv::Point2f(v.x(), v.y());
 }
 
+cv::Point2f chessboard::qpoint2cv_point2f(QPoint p)
+{
+    return cv::Point2f(p.x(), p.y());
+}
+
+cv::Point3f chessboard::qpoint2cv_point3f(QPoint p)
+{
+    return qvec2d2cv_point3f(QVector2D(p));
+}
+
+cv::Point3f chessboard::qvec2d2cv_point3f(QVector2D v)
+{
+    return cv::Point3f(v.x(), v.y(), 1);
+}
+
+cv::Vec3f chessboard::qvec2d2cv_vec3f(QVector2D v)
+{
+    return cv::Vec3f(v.x(), v.y(), 1);
+}
+
+cv::Vec3f chessboard::qpoint2cv_vec3f(QPoint p)
+{
+    return qvec2d2cv_vec3f(QVector2D(p));
+}
+
+cv::Mat chessboard::qvec2d2cv_mat(QVector2D v, int cv_mat_type)
+{
+    cv::Mat m(3, 1, cv_mat_type);
+    *(double*)m.ptr(0, 0) = v.x();
+    *(double*)m.ptr(1, 0) = v.y();
+    *(double*)m.ptr(2, 0) = 1;
+    return m;
+}
+
+cv::Mat chessboard::qpoint2cv_mat(QPoint p, int cv_mat_type)
+{
+    return qvec2d2cv_mat(QVector2D(p), cv_mat_type);
+}
+
+QVector3D chessboard::cv_mat2qvec3d(cv::Mat m)
+{
+    if(m.rows == 3 && m.cols == 1 && m.type() == CV_64FC1){
+        QVector3D v;
+        v.setX(m.at<double>(0, 0));
+        v.setY(m.at<double>(1, 0));
+        v.setZ(m.at<double>(2, 0));
+        return v;
+    }else{
+        return QVector3D();
+    }
+}
+
 int chessboard::map(int x, int in_min, int in_max, int out_min, int out_max)
 {
     if(in_max - in_min == 0){
@@ -137,6 +189,15 @@ QVector2D chessboard::get_origin()
     return QVector2D(0, 0);
 }
 
+QVector3D chessboard::get_origin_normal()
+{
+    cv::Mat H = get_rotation_matrix();
+    QVector3D a = cv_mat2qvec3d(H * qvec2d2cv_mat(corners[0][1][0], CV_64FC1));
+    QVector3D b = cv_mat2qvec3d(H * qvec2d2cv_mat(corners[0][0][0], CV_64FC1));
+    QVector3D d = cv_mat2qvec3d(H * qvec2d2cv_mat(corners[1][0][0], CV_64FC1));
+    return QVector3D::normal(a - b, d - b);
+}
+
 QPoint chessboard::get_origin_index()
 {
     return map_index_to_koords(0, 0);
@@ -151,20 +212,67 @@ QVector2D chessboard::get_center(char letter, char number)
     return centers[p.x()][p.y()].at(0);
 }
 
+cv::Mat chessboard::get_homography_matrix()
+{
+    cv::Point2f dstPoints[4];
+    dstPoints[0].x = -0.5; dstPoints[0].y = 0.5;
+    dstPoints[1].x = 0.5; dstPoints[1].y = 0.5;
+    dstPoints[2].x = 0.5; dstPoints[2].y = -0.5;
+    dstPoints[3].x = -0.5; dstPoints[3].y = -0.5;
+    cv::Mat homographyMatrix(cv::Size(3, 3), CV_32FC1);
+    cv::Point2f targetCorners[4];
+    targetCorners[0] = qvec2d2cv_point2f(corners[0][1][0]);
+    targetCorners[1] = qvec2d2cv_point2f(corners[1][1][0]);
+    targetCorners[2] = qvec2d2cv_point2f(corners[1][0][0]);
+    targetCorners[3] = qvec2d2cv_point2f(corners[0][0][0]);
+    homographyMatrix = cv::getPerspectiveTransform(targetCorners, dstPoints);
+    return homographyMatrix;
+}
+
+QPair<cv::Mat, cv::Mat> chessboard::get_rotation_translation()
+{
+    cv::Mat K(cv::Size(3, 3), CV_64FC1);    //Intrinsic Camera Parameters
+    cv::Mat rotation(cv::Size(3, 3), CV_64FC1);
+    cv::Mat translation(cv::Size(3, 1), CV_64FC1);
+    cv::Mat H = get_homography_matrix();
+    cv::Mat Kinv = K.inv();
+    double norm = sqrt(H.at<double>(0,0)*H.at<double>(0,0) +
+                       H.at<double>(1,0)*H.at<double>(1,0) +
+                       H.at<double>(2,0)*H.at<double>(2,0));
+    H /= norm;
+    cv::Mat c1  = H.col(0);
+    cv::Mat c2  = H.col(1);
+    cv::Mat c3 = c1.cross(c2);
+    translation = H.col(2);
+    for (int i = 0; i < 3; i++)
+    {
+        rotation.at<double>(i,0) = c1.at<double>(i,0);
+        rotation.at<double>(i,1) = c2.at<double>(i,0);
+        rotation.at<double>(i,2) = c3.at<double>(i,0);
+    }
+    cv::Mat W, U, Vt;
+    cv::SVDecomp(rotation, W, U, Vt);
+    rotation = U*Vt;
+
+    QPair<cv::Mat, cv::Mat> pair(rotation, translation);
+    return pair;
+}
+
 cv::Mat chessboard::get_rotation_matrix()
 {
     cv::Point2f dstPoints[4];
-    dstPoints[0].x = -0.5; dstPoints[0].y = -0.5;
-    dstPoints[1].x = -0.5; dstPoints[1].y = 0.5;
-    dstPoints[2].x = 0.5; dstPoints[2].y = 0.5;
-    dstPoints[3].x = 0.5; dstPoints[3].y = -0.5;
+    dstPoints[0].x = -0.5; dstPoints[0].y = 0.5;
+    dstPoints[1].x = 0.5; dstPoints[1].y = 0.5;
+    dstPoints[2].x = 0.5; dstPoints[2].y = -0.5;
+    dstPoints[3].x = -0.5; dstPoints[3].y = -0.5;
     cv::Mat homographyMatrix(cv::Size(3, 3), CV_32FC1);
     cv::Point2f targetCorners[4];
-    targetCorners[0] = qvec2d2cv_point2f(corners[0][0][0]);
-    targetCorners[1] = qvec2d2cv_point2f(corners[1][0][0]);
-    targetCorners[2] = qvec2d2cv_point2f(corners[1][1][0]);
-    targetCorners[3] = qvec2d2cv_point2f(corners[0][1][0]);
-    homographyMatrix = cv::getPerspectiveTransform(dstPoints, targetCorners);
+    targetCorners[0] = qvec2d2cv_point2f(corners[0][1][0]);
+    targetCorners[1] = qvec2d2cv_point2f(corners[1][1][0]);
+    targetCorners[2] = qvec2d2cv_point2f(corners[1][0][0]);
+    targetCorners[3] = qvec2d2cv_point2f(corners[0][0][0]);
+    homographyMatrix = cv::getPerspectiveTransform(targetCorners, dstPoints);
+    qDebug() << "Homography Mat";
     return homographyMatrix;
 }
 
@@ -181,43 +289,33 @@ QQuaternion chessboard::get_rotation_matrix(bool placeholder)
     rot_mat.setRow(2, row3);
     rot_mat.setRow(3, row4);
     QGenericMatrix<3, 3, float> mat3 = rot_mat.toGenericMatrix<3, 3>();
+    qDebug() << "Homography Mat " << rot_mat;
     QQuaternion rot = QQuaternion::fromRotationMatrix(mat3);
-
-/*
-    double params[4] = {};
-    cv::Mat _A_matrix = cv::Mat::zeros(3, 3, CV_64FC1);   // intrinsic camera parameters
-    _A_matrix.at<double>(0, 0) = params[0];       //      [ fx   0  cx ]
-    _A_matrix.at<double>(1, 1) = params[1];       //      [  0  fy  cy ]
-    _A_matrix.at<double>(0, 2) = params[2];       //      [  0   0   1 ]
-    _A_matrix.at<double>(1, 2) = params[3];
-    _A_matrix.at<double>(2, 2) = 1;
-    cv::Mat _R_matrix = cv::Mat::zeros(3, 3, CV_64FC1);   // rotation matrix
-    cv::Mat _t_matrix = cv::Mat::zeros(3, 1, CV_64FC1);   // translation matrix
-    cv::Mat _P_matrix = cv::Mat::zeros(3, 4, CV_64FC1);   // rotation-translation matrix
-    const std::vector<cv::Point3f> list_points3d;       // list with model 3D coordinates
-     const std::vector<cv::Point2f> list_points2d;        // list with scene 2D coordinates
-     int flags;
-     cv::Mat inliers;
-     int iterationsCount;     // PnP method; inliers container
-     float reprojectionError;
-     float confidence;
-
-
-    cv::Mat distCoeffs = cv::Mat::zeros(4, 1, CV_64FC1);    // vector of distortion coefficients
-    cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64FC1);          // output rotation vector
-    cv::Mat tvec = cv::Mat::zeros(3, 1, CV_64FC1);          // output translation vector
-    bool useExtrinsicGuess = false;   // if true the function uses the provided rvec and tvec values as
-                                      // initial approximations of the rotation and translation vectors
-    cv::solvePnPRansac( list_points3d, list_points2d, _A_matrix, distCoeffs, rvec, tvec,
-                        useExtrinsicGuess, iterationsCount, reprojectionError, confidence,
-                        inliers, flags );
-
-    cv::Rodrigues(rvec,_R_matrix);                   // converts Rotation Vector to Matrix
-    _t_matrix = tvec;
-*/
 
     rot.normalize();
 
+    return rot;
+}
+
+QQuaternion chessboard::cv_mat2qquaternion(cv::Mat rot_mat)
+{
+    if(rot_mat.rows != 3 || rot_mat.cols != 3){
+        return QQuaternion();
+    }
+    QMatrix4x4 qrot_mat;
+    QVector4D row1(rot_mat.at<float>(0, 0), rot_mat.at<float>(0, 1), rot_mat.at<float>(0, 2), 0);
+    QVector4D row2(rot_mat.at<float>(1, 0), rot_mat.at<float>(1, 1), rot_mat.at<float>(1, 2), 0);
+    QVector4D row3(rot_mat.at<float>(2, 0), rot_mat.at<float>(2, 1), rot_mat.at<float>(2, 2), 0);
+    QVector4D row4(0, 0, 0, 1);
+    qrot_mat.setRow(0, row1);
+    qrot_mat.setRow(1, row2);
+    qrot_mat.setRow(2, row3);
+    qrot_mat.setRow(3, row4);
+    QGenericMatrix<3, 3, float> mat3 = qrot_mat.toGenericMatrix<3, 3>();
+    qDebug() << "Homography Mat " << qrot_mat;
+    QQuaternion rot = QQuaternion::fromRotationMatrix(mat3);
+    rot.normalize();
+    qDebug() << "Quaterion " << rot;
     return rot;
 }
 

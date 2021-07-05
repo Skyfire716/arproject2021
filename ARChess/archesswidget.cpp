@@ -148,7 +148,7 @@ void archesswidget::ar_rotation(QQuaternion q)
 {
     qDebug() << "New Rot";
     //monkeyTransform->setRotation(q * QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), 90.0f) * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 180.0f));
-    fieldTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), -90) * q.inverted());
+    fieldTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), -90) * q);
 }
 
 void archesswidget::resizeEvent(QResizeEvent *event)
