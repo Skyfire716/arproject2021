@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 
 #include <QApplication>
-#if Q_OS_ANDROID
+#ifdef Q_OS_ANDROID
 #include <QtAndroid>
 #endif
 

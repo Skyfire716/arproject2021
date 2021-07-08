@@ -90,8 +90,7 @@ public slots:
 signals:
     void image_ready(QPixmap img);
     void finished();
-    void new_ar_rotation(QQuaternion q);
-    void new_ar_transform(QPair<QQuaternion, QVector3D> trans);
+    void new_ar_transform_singels(float scalar, float xpos, float ypos, float zpos, float x, float y, float z);
     void camera_detected(QString cam_name);
     void chessboard_updated(QPixmap pix);
 

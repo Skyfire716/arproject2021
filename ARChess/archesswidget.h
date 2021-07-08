@@ -7,6 +7,8 @@
 #include <Qt3DRender>
 #include <QImage>
 #include <QPixmap>
+#include <QPair>
+#include <QVector3D>
 #include <qboxlayout.h>
 #include <QQuaternion>
 
@@ -35,8 +37,7 @@ public:
     archessbackgound *planeTextureImage;
 
 public slots:
-    void ar_rotation(QQuaternion q);
-    void transform_update(QPair<QQuaternion, QVector3D> trans);
+    void new_ar_transform_singels(float scalar, float xpos, float ypos, float zpos, float x, float y, float z);
     
 private:
     Qt3DCore::QTransform *monkeyTransform;

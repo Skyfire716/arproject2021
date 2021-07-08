@@ -5,6 +5,9 @@
 #include <QCamera>
 #include <QCameraInfo>
 #include <QPixmap>
+#include <QVector3D>
+#include <QQuaternion>
+#include <QPair>
 #include <QSize>
 #include <QObject>
 #include <opencv2/opencv.hpp>
@@ -35,8 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(cam_control->worker, &camera_worker::camera_detected, this, &MainWindow::add_camerabox_item);
     connect(cam_control->worker, &camera_worker::image_ready, arwidget->planeTextureImage, &archessbackgound::receive_image);
     connect(cam_control->worker, &camera_worker::chessboard_updated, this, &MainWindow::chessboard_updated);
-    connect(cam_control->worker, &camera_worker::new_ar_rotation, arwidget, &archesswidget::ar_rotation);
-    connect(cam_control->worker, &camera_worker::new_ar_transform, arwidget, &archesswidget::transform_update);
+    connect(cam_control->worker, &camera_worker::new_ar_transform_singels, arwidget, &archesswidget::new_ar_transform_singels);
     qDebug() << "connected";
     cam_control->init();
     cam_control->start_capture();

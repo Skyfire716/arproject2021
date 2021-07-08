@@ -26,7 +26,7 @@ double camera_worker::angle(cv::Point2f a, cv::Point2f b)
 
 float camera_worker::normalizeVec(cv::Point2f *p)
 {
-    float length = sqrt(pow(p->x, 2) + pow(p->y, 2));
+    float length = qSqrt(pow(p->x, 2) + pow(p->y, 2));
     p->x = p->x / length;
     p->y = p->y / length;
     return length;
@@ -580,7 +580,7 @@ bool camera_worker::is_zero(cv::Point2f p)
 
 bool camera_worker::is_nan(cv::Point2f p)
 {
-    return isnan(p.x) || isnan(p.y);
+    return qIsNaN(p.x) || qIsNaN(p.y);
 }
 
 bool camera_worker::point_in_mat(cv::Mat image, cv::Point2f p)
@@ -762,7 +762,7 @@ void camera_worker::run()
                         *c = getsubPixel(*c);
                         *d = getsubPixel(*d);
                         cv::Point2f center_point = intersection_P2PLine_P2PLine(*a, *d, *b, *c);
-                        if(isnan(center_point.x) || isnan(center_point.y) || center_point.x < 0 || center_point.x > threshold_image.cols || center_point.y < 0 || center_point.y > threshold_image.rows){
+                        if(qIsNaN(center_point.x) || qIsNaN(center_point.y) || center_point.x < 0 || center_point.x > threshold_image.cols || center_point.y < 0 || center_point.y > threshold_image.rows){
                             continue;
                         }
                         //Diagonale durch laufen
@@ -841,10 +841,10 @@ void camera_worker::run()
                                 cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
                                 //emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
-                                emit new_ar_rotation(my_chessboard_controller.get_ar_rotation());
                                 QPair<QQuaternion, QVector3D> trans = my_chessboard_controller.get_transform();
-                                qDebug() << "Trans in Worker " << trans;
-                                emit new_ar_transform(trans);
+                                QQuaternion q = trans.first;
+                                QVector3D transV = trans.second;
+                                emit new_ar_transform_singels(q.scalar(), q.x(), q.y(), q.z(), transV.x(), transV.y(), transV.z());
                                 cv::Mat imageMarker(cv::Size(200, 200), camera_image.type());
                                 cv::warpPerspective(camera_image, imageMarker, my_chessboard_controller.get_current_board().get_rotation_matrix(), cv::Size(200, 200));
                                 QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);

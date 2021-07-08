@@ -30,7 +30,7 @@ FORMS += \
     mainwindow.ui
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    QT += androidextras
+    QT       += core gui multimedia multimediawidgets 3dcore 3drender 3dinput 3dlogic 3dextras 3danimation androidextras
     ANDROID_EXTRA_LIBS = \
         $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_core.so \
         $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_imgproc.so \

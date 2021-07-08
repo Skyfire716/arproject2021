@@ -132,7 +132,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     bauerEntity->addComponent(objectsLayer);
 
 
-
+/*
     Qt3DCore::QEntity *fieldEntity = new Qt3DCore::QEntity(rootEntity);
     Qt3DExtras::QPlaneMesh *fieldMesh = new Qt3DExtras::QPlaneMesh(fieldEntity);
     fieldMesh->setHeight(3.2);
@@ -151,7 +151,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     fieldEntity->addComponent(fieldMaterial);
     fieldEntity->addComponent(fieldTransform);
     fieldEntity->addComponent(objectsLayer);
-
+*/
 
     m_3d_window_container = QWidget::createWindowContainer(m_3d_window);
     m_3d_window_container->setGeometry(QRect(0, 0, planeTextureImage->paint_area_size.width(), planeTextureImage->paint_area_size.height()));
@@ -163,19 +163,13 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     planeTextureImage->update();
 }
 
-void archesswidget::ar_rotation(QQuaternion q)
+void archesswidget::new_ar_transform_singels(float scalar, float xpos, float ypos, float zpos, float x, float y, float z)
 {
-    qDebug() << "New Rot";
-    //monkeyTransform->setRotation(q * QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), 90.0f) * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 180.0f));
-    fieldTransform->setRotation(q);
-    bauerTransform->setRotation(q);
-}
-
-void archesswidget::transform_update(QPair<QQuaternion, QVector3D> trans)
-{
+    QQuaternion q(scalar, xpos, ypos, zpos);
+    QVector3D trans(x, y, z);
     qDebug() << "Applying Trans";
-    bauerTransform->setTranslation(trans.second);
-    bauerTransform->setRotation(trans.first);
+    bauerTransform->setRotation(q);
+    bauerTransform->setTranslation(trans);
 }
 
 void archesswidget::resizeEvent(QResizeEvent *event)
