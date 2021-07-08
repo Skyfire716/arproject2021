@@ -37,6 +37,9 @@ public:
     explicit archesswidget(QWidget *parent = nullptr);
     archessbackgound *planeTextureImage;
 
+signals:
+    void value_click_changed(int x_value, int y_value);
+
 public slots:
     void new_ar_transform_singels(float scalar, float xpos, float ypos, float zpos, float x, float y, float z);
     

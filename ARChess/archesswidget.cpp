@@ -155,6 +155,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
 
     m_3d_window_container = QWidget::createWindowContainer(m_3d_window);
     m_3d_window_container->setGeometry(QRect(0, 0, planeTextureImage->paint_area_size.width(), planeTextureImage->paint_area_size.height()));
+    m_3d_window->installEventFilter(this);
     layout = new QBoxLayout(QBoxLayout::LeftToRight, this);
     layout->addItem(new QSpacerItem(0, 0));
     layout->addWidget(m_3d_window_container);
@@ -199,6 +200,22 @@ void archesswidget::resizeEvent(QResizeEvent *event)
     m_3d_window_container->setGeometry(m_3d_window->geometry());
     planeTextureImage->window_area = m_3d_window->geometry();
     renderSurfaceSelector->setSurface(m_3d_window);
+}
+
+void archesswidget::mousePressEvent(QMouseEvent *event)
+{
+    emit value_click_changed(event->x(), event->y());
+    event->accept();
+}
+
+bool archesswidget::eventFilter(QObject *watched, QEvent *event)
+{
+    //TODO Here you can receive other events from the image screen
+    if(watched == m_3d_window && event->type() == QEvent::MouseMove){
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        emit value_click_changed(mouseEvent->x() + m_3d_window->position().x(), mouseEvent->y() + m_3d_window->position().y());
+    }
+    return false;
 }
 
 archessbackgound::archessbackgound(Qt3DCore::QNode *parent) : Qt3DRender::QPaintedTextureImage(parent)
