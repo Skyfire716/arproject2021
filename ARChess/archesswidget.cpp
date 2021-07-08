@@ -113,6 +113,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     monkeyEntity->addComponent(objectsLayer);
 */
 
+
     Qt3DCore::QEntity *bauerEntity = new Qt3DCore::QEntity(rootEntity);
     Qt3DRender::QMesh *bauerMesh = new Qt3DRender::QMesh();
     bauerMesh->setSource(QUrl("qrc:/models/resources/models/bauer.stl"));
@@ -129,6 +130,8 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     bauerEntity->addComponent(bauerTransform);
     bauerEntity->addComponent(material);
     bauerEntity->addComponent(objectsLayer);
+
+
 
     Qt3DCore::QEntity *fieldEntity = new Qt3DCore::QEntity(rootEntity);
     Qt3DExtras::QPlaneMesh *fieldMesh = new Qt3DExtras::QPlaneMesh(fieldEntity);
@@ -164,7 +167,15 @@ void archesswidget::ar_rotation(QQuaternion q)
 {
     qDebug() << "New Rot";
     //monkeyTransform->setRotation(q * QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), 90.0f) * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 180.0f));
-    fieldTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), -90) * q);
+    fieldTransform->setRotation(q);
+    bauerTransform->setRotation(q);
+}
+
+void archesswidget::transform_update(QPair<QQuaternion, QVector3D> trans)
+{
+    qDebug() << "Applying Trans";
+    bauerTransform->setTranslation(trans.second);
+    bauerTransform->setRotation(trans.first);
 }
 
 void archesswidget::resizeEvent(QResizeEvent *event)

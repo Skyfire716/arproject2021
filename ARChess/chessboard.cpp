@@ -250,10 +250,11 @@ QPair<cv::Mat, cv::Mat> chessboard::get_rotation_translation()
         rotation.at<double>(i,1) = c2.at<double>(i,0);
         rotation.at<double>(i,2) = c3.at<double>(i,0);
     }
+    /*
     cv::Mat W, U, Vt;
     cv::SVDecomp(rotation, W, U, Vt);
     rotation = U*Vt;
-
+    */
     QPair<cv::Mat, cv::Mat> pair(rotation, translation);
     return pair;
 }

@@ -36,6 +36,7 @@ public:
 
 public slots:
     void ar_rotation(QQuaternion q);
+    void transform_update(QPair<QQuaternion, QVector3D> trans);
     
 private:
     Qt3DCore::QTransform *monkeyTransform;
