@@ -161,6 +161,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     layout->addItem(new QSpacerItem(0, 0));
     layout->setContentsMargins(0, 0, 0, 0);
     planeTextureImage->update();
+
 }
 
 void archesswidget::new_ar_transform_singels(float scalar, float xpos, float ypos, float zpos, float x, float y, float z)

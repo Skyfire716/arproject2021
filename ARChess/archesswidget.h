@@ -6,6 +6,7 @@
 #include <Qt3DExtras>
 #include <Qt3DRender>
 #include <QImage>
+#include <QLabel>
 #include <QPixmap>
 #include <QPair>
 #include <QVector3D>
@@ -52,6 +53,11 @@ private:
     
 protected:
     void resizeEvent(QResizeEvent *event);
+    void mousePressEvent(QMouseEvent *event);
+
+    // QObject interface
+public:
+    bool eventFilter(QObject *watched, QEvent *event);
 };
 
 #endif // ARCHESSWIDGET_H
