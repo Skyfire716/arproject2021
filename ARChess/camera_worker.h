@@ -52,7 +52,7 @@ public:
     int neighbour_validation_probing(cv::Point2f tl, cv::Point2f tr, cv::Point2f bl, cv::Point2f br);
     QPointF cv_point2f2qpoint(cv::Point2f p);
     QVector2D cv_point2f2qvec2d(cv::Point2f p);
-    cv::Point2f line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec, cv::Point2f lineNormalized);
+    cv::Point2f line_probeing(cv::Point2f start_corner, float line_length, cv::Point2f line_normalized_vec);
     cv::Point2f intersection_P2PLine_P2PLine(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3, cv::Point2f p4);
     cv::Point2f line_P2P(cv::Point2f p1, cv::Point2f p2);
     cv::Point2f angled_vector_from_normal(cv::Point2f normal, float angle_deg);

@@ -219,7 +219,7 @@ cv::Mat chessboard::get_homography_matrix()
     dstPoints[1].x = 0.5; dstPoints[1].y = 0.5;
     dstPoints[2].x = 0.5; dstPoints[2].y = -0.5;
     dstPoints[3].x = -0.5; dstPoints[3].y = -0.5;
-    cv::Mat homographyMatrix(cv::Size(3, 3), CV_32FC1);
+    cv::Mat homographyMatrix(cv::Size(3, 3), CV_64FC1);
     cv::Point2f targetCorners[4];
     targetCorners[0] = qvec2d2cv_point2f(corners[0][1][0]);
     targetCorners[1] = qvec2d2cv_point2f(corners[1][1][0]);
@@ -236,6 +236,12 @@ QPair<cv::Mat, cv::Mat> chessboard::get_rotation_translation()
     cv::Mat rotation(cv::Size(3, 3), CV_64FC1);
     cv::Mat translation(cv::Size(3, 1), CV_64FC1);
     cv::Mat H = get_homography_matrix();
+    qDebug() << "H Type " << H.type();
+    qDebug() << "H rows " << H.rows;
+    qDebug() << "H cols " << H.cols;
+    QVector3D colX(H.at<double>(0, 0), H.at<double>(1, 0), H.at<double>(2, 0));
+    QVector3D colY(H.at<double>(0, 1), H.at<double>(1, 1), H.at<double>(2, 1));
+    QVector3D colZ(H.at<double>(0, 2), H.at<double>(1, 2), H.at<double>(2, 2));
     float lense_focal_length = 634.0;
     float fMarkerSize = 0.032;
     const double fScaleLeft[3] = { 1.0f / lense_focal_length, 1.0f / lense_focal_length, -1.0f };
@@ -243,39 +249,116 @@ QPair<cv::Mat, cv::Mat> chessboard::get_rotation_translation()
     for (int r = 0; r < 3; r++){
         for (int c = 0;  c < 3; c++){
             H.at<double>(r, c) = H.at<double>(r, c) * fScaleLeft[r] * fScaleRight[c];
+            qDebug() << "H at c " << c << " r " << r << "  " << QString::number(H.at<double>(r, c));
+            if(c == 0){
+                if(r == 0){
+                    colX.setX(colX.x() * fScaleLeft[r] * fScaleRight[c]);
+                }else if(r == 1){
+                    colX.setY(colX.y() * fScaleLeft[r] * fScaleRight[c]);
+                }else if(r == 2){
+                    colX.setZ(colX.z() * fScaleLeft[r] * fScaleRight[c]);
+                }
+            }else if(c == 1){
+                if(r == 0){
+                    colY.setX(colY.x() * fScaleLeft[r] * fScaleRight[c]);
+                }else if(r == 1){
+                    colY.setY(colY.y() * fScaleLeft[r] * fScaleRight[c]);
+                }else if(r == 2){
+                    colY.setZ(colY.z() * fScaleLeft[r] * fScaleRight[c]);
+                }
+            }else if(c == 2){
+                if(r == 0){
+                    colZ.setX(colZ.x() * fScaleLeft[r] * fScaleRight[c]);
+                }else if(r == 1){
+                    colZ.setY(colZ.y() * fScaleLeft[r] * fScaleRight[c]);
+                }else if(r == 2){
+                    colZ.setZ(colZ.z() * fScaleLeft[r] * fScaleRight[c]);
+                }
+            }
         }
     }
+    qDebug() << "ColX " << colX;
+    qDebug() << "ColY " << colY;
+    qDebug() << "ColZ " << colZ;
 
+    if(colZ.z() > 0.0f){
+        colX *= -1;
+        colY *= -1;
+        colZ *= -1;
+    }
     if (H.at<double>(2, 2) > 0.0f){
         for (int r = 0; r < 3; r++){
             for (int c = 0; c < 3; c++){
                 H.at<double>(r, c) *= -1;
+                qDebug() << "H at c " << c << " r " << r << "  " << QString::number(H.at<double>(r, c));
             }
         }
+        qDebug() << "ColX " << colX;
+        qDebug() << "ColY " << colY;
+        qDebug() << "ColZ " << colZ;
     }
     double fXLen = qSqrt(qPow(H.col(0).at<double>(0, 0), 2) + qPow(H.col(0).at<double>(1, 0), 2) + qPow(H.col(0).at<double>(2, 0), 2));
+    double fXLenVec = colX.length();
+    double fYLenVec = colY.length();
     double fYLen = qSqrt(qPow(H.col(1).at<double>(0, 0), 2) + qPow(H.col(1).at<double>(1, 0), 2) + qPow(H.col(1).at<double>(2, 0), 2));
+    qDebug() << fXLen << " vs " << fXLenVec;
+    qDebug() << fYLen << " vs " << fYLenVec;
     double fTransScale = 2.0f / (fXLen + fYLen);
+    double fTransScaleVec = 2.0f / (fXLenVec + fYLenVec);
+    QVector3D translationVec(0, 0, 0);
     for (int i = 0; i < 3; i++){
         translation.at<double>(i, 0) = H.at<double>(i, 2) * fTransScale;
+        qDebug() << "Translation entrys " << QString::number(translation.at<double>(i, 0));
+        if(i == 0){
+            translationVec.setX(colZ.x() * fTransScaleVec);
+        }else if(i == 1){
+            translationVec.setY(colZ.y() * fTransScaleVec);
+        }else if(i == 2){
+            translationVec.setZ(colZ.z() * fTransScaleVec);
+        }
         H.col(0).at<double>(i, 0) = H.col(0).at<double>(i, 0) * 1.0f / fXLen;
+        qDebug() << "H 0 entrys " << QString::number(H.col(0).at<double>(i, 0));
         H.col(1).at<double>(i, 0) = H.col(1).at<double>(i, 0) * 1.0f / fYLen;
+        qDebug() << "H 1 entrys " << QString::number(H.col(1).at<double>(i, 0));
     }
+    colX *= (1.0f / fXLenVec);
+    colY *= (1.0f / fYLenVec);
+    qDebug() << "Trans Vec " << translationVec;
+    qDebug() << "ColX " << colX;
+    qDebug() << "ColY " << colY;
+    colZ = QVector3D::crossProduct(colX, colY);
+    cv::Mat cross_result = H.col(0).cross(H.col(1));
     H.col(2) = H.col(0).cross(H.col(1));
+    qDebug() << "CrossResult " << cross_result.at<double>(0, 0) << ", " << cross_result.at<double>(1, 0) << ", " << cross_result.at<double>(2, 0);
+    qDebug() << "H 2 " << H.col(2).at<double>(0, 0) << ", " << H.col(2).at<double>(1, 0) << ", " << H.col(2).at<double>(2, 0);
+    qDebug() << "ColZ " << colZ;
+    double fZLenVec = colZ.length();
+    colZ *= (1.0f / fZLenVec);
     double fZLen = qSqrt(qPow(H.col(2).at<double>(0, 0), 2) + qPow(H.col(2).at<double>(1, 0), 2) + qPow(H.col(2).at<double>(2, 0), 2));
     for(int i = 0; i < 3; i++){
         H.col(2).at<double>(i, 0) = H.col(2).at<double>(i, 0) * 1.0f / fZLen;
     }
+    colY = QVector3D::crossProduct(colX, colZ);
+    colY *= -1.0;
     H.col(1) = H.col(0).cross(H.col(2));
     for(int i = 0; i < 3; i++){
         H.col(1).at<double>(i, 0) = H.col(1).at<double>(i, 0) * -1.0;
     }
     for (int i = 0; i < 3; i++)
     {
+        /*
         rotation.at<double>(i,0) = H.col(0).at<double>(i,0);
         rotation.at<double>(i,1) = H.col(1).at<double>(i,0);
         rotation.at<double>(i,2) = H.col(2).at<double>(i,0);
+        */
     }
+    QMatrix4x4 bigRotMat;
+    bigRotMat.setColumn(0, colX.toVector4D());
+    bigRotMat.setColumn(1, colY.toVector4D());
+    bigRotMat.setColumn(2, colZ.toVector4D());
+    QMatrix3x3 rotMat = bigRotMat.toGenericMatrix<3, 3>();
+    qDebug() << "Rot " << rotMat;
+    qDebug() << "Transform " << translationVec;
     QPair<cv::Mat, cv::Mat> pair(rotation, translation);
     return pair;
 }
