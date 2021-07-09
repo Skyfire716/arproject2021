@@ -21,6 +21,16 @@ void chessboard_controller::clear_current()
     boards[!active].clear();
 }
 
+void chessboard_controller::optimize_current_board()
+{
+    boards[!active].optimize_chessboard();
+}
+
+void chessboard_controller::validate_current_board(cv::Mat image, int (*check_color)(cv::Mat, cv::Point2f))
+{
+    boards[!active].validating_colors(image, check_color);
+}
+
 chessboard chessboard_controller::get_current_board()
 {
     return boards[!active];

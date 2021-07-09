@@ -21,12 +21,108 @@ void chessboard::clear()
     }
 }
 
+void chessboard::optimize_chessboard()
+{
+    QPair<int, int> tlI = get_board_corner_indizes(chessboard::TOP_LEFT_CORNER);
+    QPair<int, int> trI = get_board_corner_indizes(chessboard::TOP_RIGHT_CORNER);
+    QPair<int, int> brI = get_board_corner_indizes(chessboard::BOTTOM_RIGHT_CORNER);
+    QPair<int, int> blI = get_board_corner_indizes(chessboard::BOTTOM_LEFT_CORNER);
+    int tlX = tlI.first, tlY = tlI.second;
+    int trX = trI.first, trY = trI.second;
+    int brX = brI.first, brY = brI.second;
+    int blX = blI.first, blY = blI.second;
+    QList<QVector2D> topLines;
+    QList<QVector2D> leftLines;
+    QList<QVector2D> bottomLines;
+    QList<QVector2D> rightLines;
+    for(int i = 0; i < 9; i++){
+        int x = (tlX + i) < 0 ? 8 + (tlX + i) : (((tlX + i) > 8) ? ((tlX + i) % 9) : (tlX + i));
+        int y = (brY + i) < 0 ? 8 + (brY + i) : (((brY + i) > 8) ? ((brY + i) % 9) : (brY + i));
+        int xx = (blX + i) < 0 ? 8 + (blX + i) : (((blX + i) > 8) ? ((blX + i) % 9) : (blX + i));
+        int yy = (blY + i) < 0 ? 8 + (blY + i) : (((blY + i) > 8) ? ((blY + i) % 9) : (blY + i));
+        if(i > 1 && i < 8){
+            topLines.append(get_mean_line_for_segment(x, tlY, true));
+            leftLines.append(get_mean_line_for_segment(blX, yy, false));
+            bottomLines.append(get_mean_line_for_segment(xx, blY, true));
+            rightLines.append(get_mean_line_for_segment(brX, y, false));
+        }
+    }
+    QVector2D top_heading;
+    QVector2D right_heading;
+    QVector2D bottom_heading;
+    QVector2D left_heading;
+    for(QVector2D v : topLines){
+        top_heading += v;
+    }
+    for(QVector2D v : rightLines){
+        right_heading += v;
+    }
+    for(QVector2D v : bottomLines){
+        bottom_heading += v;
+    }
+    for(QVector2D v : leftLines){
+        left_heading += v;
+    }
+    QLineF topLine(corners[tlX + 4][tlY][0].toPointF(), corners[tlX + 4][tlY][0].toPointF() + top_heading.toPointF());
+    QLineF rightLine(corners[brX][brY + 4][0].toPointF(), corners[brX][brY + 4][0].toPointF() + right_heading.toPointF());
+    QLineF bottomLine(corners[blX + 4][blY][0].toPointF(), corners[blX + 4][blY][0].toPointF() + bottom_heading.toPointF());
+    QLineF leftLine(corners[blX][blY + 4][0].toPointF(), corners[blX][blY + 4][0].toPointF() + left_heading.toPointF());
+    QPointF realTRCorner;
+    QPointF realTLCorner;
+    QPointF realBRCorner;
+    QPointF realBLCorner;
+    QLineF::IntersectType typeTR = topLine.intersect(rightLine, &realTRCorner);
+    QLineF::IntersectType typeTL = leftLine.intersect(topLine, &realTLCorner);
+    QLineF::IntersectType typeBL = bottomLine.intersect(leftLine, &realBLCorner);
+    QLineF::IntersectType typeBR = rightLine.intersect(bottomLine, &realBRCorner);
+    if(typeTL != QLineF::NoIntersection && typeTR != QLineF::NoIntersection &&
+            typeBL != QLineF::NoIntersection && typeBR != QLineF::NoIntersection){
+        corners[tlX][tlY].clear();
+        corners[tlX][tlY].append(QVector2D(realTLCorner));
+        corners[trX][trY].clear();
+        corners[trX][trY].append(QVector2D(realTRCorner));
+        corners[blX][blY].clear();
+        corners[blX][blY].append(QVector2D(realBLCorner));
+        corners[brX][brY].clear();
+        corners[brX][brY].append(QVector2D(realBRCorner));
+    }
+}
+
+void chessboard::validating_colors(cv::Mat image, int(*check_color)(cv::Mat image, cv::Point2f p))
+{
+    for(int x = 0; x < 8; x++){
+        for(int y = 0; y < 8; y++){
+            QLineF diagA(corners[x][y][0].toPointF(), corners[x + 1][y + 1][0].toPointF());
+            QLineF diagB(corners[x + 1][y][0].toPointF(), corners[x][y + 1][0].toPointF());
+            QPointF center;
+            if(QLineF::NoIntersection != diagA.intersect(diagB, &center)){
+                int center_color = check_color(image, qpoint2cv_point2f(center.toPoint()));
+                if(chessboard::BLACK == center_color){
+                    colors[x][y] = chessboard::BLACK;
+                }else if(chessboard::WHITE == center_color){
+                    colors[x][y] = chessboard::WHITE;
+                }
+            }
+        }
+    }
+}
+
+void chessboard::try_letter_detection(cv::Mat image)
+{
+
+}
+
 cv::Point2f chessboard::qvec2d2cv_point2f(QVector2D v)
 {
     return cv::Point2f(v.x(), v.y());
 }
 
 cv::Point2f chessboard::qpoint2cv_point2f(QPoint p)
+{
+    return cv::Point2f(p.x(), p.y());
+}
+
+cv::Point2f chessboard::qpoint2f2cv_point2f(QPointF p)
 {
     return cv::Point2f(p.x(), p.y());
 }
@@ -65,6 +161,32 @@ cv::Mat chessboard::qpoint2cv_mat(QPoint p, int cv_mat_type)
     return qvec2d2cv_mat(QVector2D(p), cv_mat_type);
 }
 
+QVector2D chessboard::get_mean_line_for_segment(int x, int y, bool x_axis)
+{
+    QVector<QLineF> topLines;
+    if(x > 0 && x_axis){
+        for(QVector2D v : corners[x - 1][y]){
+            for(QVector2D v1 : corners[x][y]){
+                topLines.append(QLineF(v.toPointF(), v1.toPointF()));
+            }
+        }
+    }else if(y > 0){
+        for(QVector2D v : corners[x][y - 1]){
+            for(QVector2D v1 : corners[x][y]){
+                topLines.append(QLineF(v.toPointF(), v1.toPointF()));
+            }
+        }
+    }else{
+        return QVector2D();
+    }
+    QVector2D mean_heading;
+    for(QLineF line : topLines){
+        mean_heading += QVector2D(line.dx(), line.dy());
+    }
+    mean_heading /= topLines.length();
+    return mean_heading;
+}
+
 QVector3D chessboard::cv_mat2qvec3d(cv::Mat m)
 {
     if(m.rows == 3 && m.cols == 1 && m.type() == CV_64FC1){
@@ -101,7 +223,7 @@ bool chessboard::add_field(QVector2D local_offset, QPointF tl_corner, QPointF tr
     min_x = (min_x > local_offset.x()) ? local_offset.x() : min_x;
     max_y = (max_y < local_offset.y()) ? local_offset.y() : max_y;
     min_y = (min_y > local_offset.y()) ? local_offset.y() : min_y;
-    if(max_x - min_x > 8 || max_y - min_y > 8){
+    if((max_x - min_x) > 8 || (max_y - min_y) > 8){
         qDebug() << "Error in Indexes";
         return false;
     }
@@ -117,7 +239,6 @@ bool chessboard::add_field(QVector2D local_offset, QPointF tl_corner, QPointF tr
         qDebug() << "Suspicious coloring";
         return false;
     }
-    qDebug() << "Adding " << local_offset << " with center " << center << " at " << x_index << " " << y_index;
     corners[x_index][y_index + 1].push_back(QVector2D(tl_corner));
     corners[x_index + 1][y_index + 1].push_back(QVector2D(tr_corner));
     corners[x_index][y_index].push_back(QVector2D(bl_corner));
@@ -181,6 +302,80 @@ void chessboard::drawBoard(cv::Mat image)
                 }
             }
         }
+    }
+    QPointF a = get_board_corner(chessboard::TOP_LEFT_CORNER);
+    QPointF b = get_board_corner(chessboard::BOTTOM_LEFT_CORNER);
+    QPointF c = get_board_corner(chessboard::TOP_RIGHT_CORNER);
+    QPointF d = get_board_corner(chessboard::BOTTOM_RIGHT_CORNER);
+    drawRect(image, a, b, c, d);
+}
+
+void chessboard::drawRect(cv::Mat image, int x, int y)
+{
+    drawRect(image, corners[x][y + 1][0].toPointF(), corners[x][y][0].toPointF(), corners[x + 1][y + 1][0].toPointF(), corners[x + 1][y][0].toPointF());
+}
+
+void chessboard::drawRect(cv::Mat image, QPointF a, QPointF b, QPointF c, QPointF d)
+{
+    cv::line(image, qpoint2f2cv_point2f(b), qpoint2f2cv_point2f(d), cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+    cv::line(image, qpoint2f2cv_point2f(b), qpoint2f2cv_point2f(a), cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+    cv::line(image, qpoint2f2cv_point2f(d), qpoint2f2cv_point2f(c), cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+    cv::line(image, qpoint2f2cv_point2f(a), qpoint2f2cv_point2f(c), cv::Scalar(0, 0, 255), 3, cv::LINE_8);
+}
+
+QPointF chessboard::get_board_corner(const int CORNER_CODE)
+{
+    QPair<int, int> indizes = get_board_corner_indizes(CORNER_CODE);
+    if(indizes.first < 0 || indizes.second < 0){
+        return QPointF();
+    }else{
+        return corners[indizes.first][indizes.second][0].toPointF();
+    }
+}
+
+QPair<int, int> chessboard::get_board_corner_indizes(const int CORNER_CODE)
+{
+    QPair<int, int> pair = get_board_corner_center_indizes(CORNER_CODE);
+    int x = pair.first, y = pair.second;
+    switch(CORNER_CODE){
+        case chessboard::TOP_LEFT_CORNER:
+            return QPair<int, int>(x, y + 1);
+        case chessboard::TOP_RIGHT_CORNER:
+            return QPair<int, int>(x + 1, y + 1);
+        case chessboard::BOTTOM_RIGHT_CORNER:
+            return QPair<int, int>(x + 1, y);
+        case chessboard::BOTTOM_LEFT_CORNER:
+            return QPair<int, int>(x, y);
+        default:
+            return QPair<int, int>(-1, -1);
+    }
+}
+
+QPair<int, int> chessboard::get_board_corner_center_indizes(const int CORNER_CODE)
+{
+    int tlX = min_x, tlY = max_y;
+    int trX = max_x, trY = max_y;
+    int brX = max_x, brY = min_y;
+    int blX = min_x, blY = min_y;
+    switch(CORNER_CODE){
+        case chessboard::TOP_LEFT_CORNER:
+            tlX = (tlX < 0) ? (8 + tlX) : tlX;
+            tlY = (tlY > 8) ? (tlY % 8) : tlY;
+            return QPair<int, int>(tlX, tlY);
+        case chessboard::TOP_RIGHT_CORNER:
+            trX = (trX > 8) ? (trX % 8) : trX;
+            trY = (trY > 8) ? (trY % 8) : trY;
+            return QPair<int, int>(trX, trY);
+        case chessboard::BOTTOM_RIGHT_CORNER:
+            brX = (brX > 8) ? (brX % 8) : brX;
+            brY = (brY < 0) ? (8 + brY) : brY;
+            return QPair<int, int>(brX, brY);
+        case chessboard::BOTTOM_LEFT_CORNER:
+            blX = (blX < 0) ? (8 + blX) : blX;
+            blY = (blY < 0) ? (8 + blY) : blY;
+            return QPair<int, int>(blX, blY);
+        default:
+            return QPair<int, int>(-1, -1);
     }
 }
 
@@ -395,4 +590,9 @@ chessboard::chessboard(const chessboard &board)
             this->corners[i][j].append(board.corners[i][j]);
         }
     }
+    this->min_x = board.min_x;
+    this->max_x = board.max_x;
+    this->min_y = board.min_y;
+    this->max_y = board.max_y;
+    this->origin_index = board.origin_index;
 }

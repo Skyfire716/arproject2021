@@ -18,7 +18,7 @@ class camera_worker : public QObject
     const int WHITE_FIELD_SUM = 500;
     const int WHITE_FIELD_CROSSING = 3000;
     const int BLACK_FIELD_CROSSING = 500;
-    const int COLOR_CHECK_AREA = 5;
+    static const int COLOR_CHECK_AREA = 5;
     const int HARRIS_DROPOUT = 10000;
     const float LENGTH_VARYING_PERCENTAGE = 0.15;
     const int COUNTER_TL = 0;
@@ -69,13 +69,14 @@ public:
     bool field_check(cv::Rect rect, cv::Point2f p);
     float intersection_NormalLine_NormalLine(cv::Point2f line_p1, cv::Point2f line_n1, cv::Point2f line_p2, cv::Point2f line_n2);
     float distance_point_to_line(cv::Point2f lineA, cv::Point2f lineB, cv::Point2f p);
-    int check_color(cv::Mat image, int x, int y);
-    int check_color(cv::Mat image, cv::Point p, float area);
-    int check_color(cv::Mat image, cv::Point p);
+    static int check_color(cv::Mat image, int x, int y);
+    static int check_color(cv::Mat image, cv::Point p, float area);
+    static int check_color(cv::Mat image, cv::Point p);
+    static int check_color_wrapper(cv::Mat image, cv::Point2f p);
     bool is_zero(cv::Point2f p);
     bool is_nan(cv::Point2f p);
-    bool point_in_mat(cv::Mat image, cv::Point2f p);
-    bool rect_in_mat(cv::Mat image, cv::Rect rect);
+    static bool point_in_mat(cv::Mat image, cv::Point2f p);
+    static bool rect_in_mat(cv::Mat image, cv::Rect rect);
     void print_vec(cv::Point2f p);
     bool running;
 

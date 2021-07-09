@@ -534,6 +534,11 @@ int camera_worker::check_color(cv::Mat image, cv::Point p)
     return check_color(image, p.x, p.y);
 }
 
+int camera_worker::check_color_wrapper(cv::Mat image, cv::Point2f p)
+{
+    return check_color(image, p);
+}
+
 bool camera_worker::is_zero(cv::Point2f p)
 {
     return (p.x == 0 && p.y == 0);
@@ -748,19 +753,14 @@ void camera_worker::run()
                                 cv::line(camera_image, *c, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
                                 cv::line(camera_image, *b, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
                                 cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
+                                my_chessboard_controller.optimize_current_board();
+                                my_chessboard_controller.validate_current_board(threshold_image, &check_color_wrapper);
                                 emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 QPair<QQuaternion, QVector3D> trans = my_chessboard_controller.get_transform();
-                                qDebug() << "Got Chessboard";
                                 QQuaternion q = trans.first;
                                 QVector3D transV = trans.second;
-                                qDebug() << "Created Subtypes";
                                 emit new_ar_transform_singels(q.scalar(), q.x(), q.y(), q.z(), transV.x(), transV.y(), transV.z());
-                                qDebug() << "Sendt To Arwidget";
-                                //cv::Mat imageMarker(cv::Size(200, 200), camera_image.type());
-                                //cv::warpPerspective(camera_image, imageMarker, my_chessboard_controller.get_current_board().get_rotation_matrix(), cv::Size(200, 200));
-                                //QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);
-                                //emit chessboard_updated(QPixmap::fromImage(img));
                                 my_chessboard_controller.switch_board();
                                 is_first = false;
                                 this->thread()->msleep(750);

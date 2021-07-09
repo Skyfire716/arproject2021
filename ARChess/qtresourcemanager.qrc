@@ -73,5 +73,11 @@
         <file>resources/models/Monkey.fbx</file>
         <file>resources/models/monkey.mtl</file>
         <file>resources/models/bauer.stl</file>
+        <file>resources/models/Bishop.stl</file>
+        <file>resources/models/King.STL</file>
+        <file>resources/models/Knight.STL</file>
+        <file>resources/models/Pawn.stl</file>
+        <file>resources/models/Queen.STL</file>
+        <file>resources/models/Rook2.STL</file>
     </qresource>
 </RCC>

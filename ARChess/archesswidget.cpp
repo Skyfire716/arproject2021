@@ -171,7 +171,7 @@ void archesswidget::new_ar_transform_singels(float scalar, float xpos, float ypo
     QVector3D trans(x, y, -z);
     qDebug() << "Applying Trans";
     qDebug() << "Translation " << trans;
-    bauerTransform->setRotation(q);
+    bauerTransform->setRotation(q * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 90));
     bauerTransform->setTranslation(trans);
 }
 
