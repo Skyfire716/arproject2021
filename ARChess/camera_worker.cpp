@@ -233,7 +233,8 @@ cv::Point2f camera_worker::getsubPixel(cv::Point2f point)
 {
     float x = point.x;
     float y = point.y;
-    int subpixelSearchLength = 150;
+    //int subpixelSearchLength = 150;
+    int subpixelSearchLength = 85;
     if(x - subpixelSearchLength >= 0 && x+subpixelSearchLength < threshold_image.cols && y-subpixelSearchLength >= 0 && y +subpixelSearchLength < threshold_image.rows){
         cv::Rect crop(x-subpixelSearchLength, y-subpixelSearchLength, 2 * subpixelSearchLength, 2 * subpixelSearchLength);
         cv::Mat harris = threshold_image(crop);
@@ -839,16 +840,19 @@ void camera_worker::run()
                                 cv::line(camera_image, *c, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
                                 cv::line(camera_image, *b, *d, cv::Scalar(0, 255, 0), 5, cv::LINE_8);
                                 cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
-                                //emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
+                                emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 QPair<QQuaternion, QVector3D> trans = my_chessboard_controller.get_transform();
+                                qDebug() << "Got Chessboard";
                                 QQuaternion q = trans.first;
                                 QVector3D transV = trans.second;
+                                qDebug() << "Created Subtypes";
                                 emit new_ar_transform_singels(q.scalar(), q.x(), q.y(), q.z(), transV.x(), transV.y(), transV.z());
-                                cv::Mat imageMarker(cv::Size(200, 200), camera_image.type());
-                                cv::warpPerspective(camera_image, imageMarker, my_chessboard_controller.get_current_board().get_rotation_matrix(), cv::Size(200, 200));
-                                QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);
-                                emit chessboard_updated(QPixmap::fromImage(img));
+                                qDebug() << "Sendt To Arwidget";
+                                //cv::Mat imageMarker(cv::Size(200, 200), camera_image.type());
+                                //cv::warpPerspective(camera_image, imageMarker, my_chessboard_controller.get_current_board().get_rotation_matrix(), cv::Size(200, 200));
+                                //QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);
+                                //emit chessboard_updated(QPixmap::fromImage(img));
                                 my_chessboard_controller.switch_board();
                                 is_first = false;
                                 this->thread()->msleep(750);

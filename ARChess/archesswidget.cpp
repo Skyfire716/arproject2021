@@ -124,7 +124,7 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
     material->setSpecular(QColor::fromRgbF(0.817308, 0.817308, 0.817308));
     bauerTransform = new Qt3DCore::QTransform;
     bauerTransform->setScale3D(QVector3D(1, 1, 1));
-    bauerTransform->setTranslation(QVector3D(0, 0, 5));
+    bauerTransform->setTranslation(QVector3D(0, 0, 0));
     bauerTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(1, 0, 0), 90.0f) * QQuaternion::fromAxisAndAngle(QVector3D(0, 1, 0), 180.0f));
     bauerEntity->addComponent(bauerMesh);
     bauerEntity->addComponent(bauerTransform);
@@ -167,11 +167,11 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
 
 void archesswidget::new_ar_transform_singels(float scalar, float xpos, float ypos, float zpos, float x, float y, float z)
 {
-    QQuaternion q(scalar, xpos, ypos, zpos);
-    QVector3D trans(x, y, z);
-    qDebug() << "Applying Trans";
-    bauerTransform->setRotation(q);
-    bauerTransform->setTranslation(trans);
+    //QQuaternion q(scalar, xpos, ypos, zpos);
+    //QVector3D trans(x, y, z);
+    //qDebug() << "Applying Trans";
+    //bauerTransform->setRotation(q);
+    //bauerTransform->setTranslation(trans);
 }
 
 void archesswidget::resizeEvent(QResizeEvent *event)

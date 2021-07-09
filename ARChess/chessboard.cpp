@@ -232,29 +232,50 @@ cv::Mat chessboard::get_homography_matrix()
 QPair<cv::Mat, cv::Mat> chessboard::get_rotation_translation()
 {
     cv::Mat K(cv::Size(3, 3), CV_64FC1);    //Intrinsic Camera Parameters
+
     cv::Mat rotation(cv::Size(3, 3), CV_64FC1);
     cv::Mat translation(cv::Size(3, 1), CV_64FC1);
     cv::Mat H = get_homography_matrix();
-    cv::Mat Kinv = K.inv();
-    double norm = sqrt(H.at<double>(0,0)*H.at<double>(0,0) +
-                       H.at<double>(1,0)*H.at<double>(1,0) +
-                       H.at<double>(2,0)*H.at<double>(2,0));
-    H /= norm;
-    cv::Mat c1  = H.col(0);
-    cv::Mat c2  = H.col(1);
-    cv::Mat c3 = c1.cross(c2);
-    translation = H.col(2);
+    float lense_focal_length = 634.0;
+    float fMarkerSize = 0.032;
+    const double fScaleLeft[3] = { 1.0f / lense_focal_length, 1.0f / lense_focal_length, -1.0f };
+    const double fScaleRight[3] = { 1.0f / fMarkerSize, 1.0f / fMarkerSize, 1.0f };
+    for (int r = 0; r < 3; r++){
+        for (int c = 0;  c < 3; c++){
+            H.at<double>(r, c) = H.at<double>(r, c) * fScaleLeft[r] * fScaleRight[c];
+        }
+    }
+
+    if (H.at<double>(2, 2) > 0.0f){
+        for (int r = 0; r < 3; r++){
+            for (int c = 0; c < 3; c++){
+                H.at<double>(r, c) *= -1;
+            }
+        }
+    }
+    double fXLen = qSqrt(qPow(H.col(0).at<double>(0, 0), 2) + qPow(H.col(0).at<double>(1, 0), 2) + qPow(H.col(0).at<double>(2, 0), 2));
+    double fYLen = qSqrt(qPow(H.col(1).at<double>(0, 0), 2) + qPow(H.col(1).at<double>(1, 0), 2) + qPow(H.col(1).at<double>(2, 0), 2));
+    double fTransScale = 2.0f / (fXLen + fYLen);
+    for (int i = 0; i < 3; i++){
+        translation.at<double>(i, 0) = H.at<double>(i, 2) * fTransScale;
+        H.col(0).at<double>(i, 0) = H.col(0).at<double>(i, 0) * 1.0f / fXLen;
+        H.col(1).at<double>(i, 0) = H.col(1).at<double>(i, 0) * 1.0f / fYLen;
+    }
+    H.col(2) = H.col(0).cross(H.col(1));
+    double fZLen = qSqrt(qPow(H.col(2).at<double>(0, 0), 2) + qPow(H.col(2).at<double>(1, 0), 2) + qPow(H.col(2).at<double>(2, 0), 2));
+    for(int i = 0; i < 3; i++){
+        H.col(2).at<double>(i, 0) = H.col(2).at<double>(i, 0) * 1.0f / fZLen;
+    }
+    H.col(1) = H.col(0).cross(H.col(2));
+    for(int i = 0; i < 3; i++){
+        H.col(1).at<double>(i, 0) = H.col(1).at<double>(i, 0) * -1.0;
+    }
     for (int i = 0; i < 3; i++)
     {
-        rotation.at<double>(i,0) = c1.at<double>(i,0);
-        rotation.at<double>(i,1) = c2.at<double>(i,0);
-        rotation.at<double>(i,2) = c3.at<double>(i,0);
+        rotation.at<double>(i,0) = H.col(0).at<double>(i,0);
+        rotation.at<double>(i,1) = H.col(1).at<double>(i,0);
+        rotation.at<double>(i,2) = H.col(2).at<double>(i,0);
     }
-    /*
-    cv::Mat W, U, Vt;
-    cv::SVDecomp(rotation, W, U, Vt);
-    rotation = U*Vt;
-    */
     QPair<cv::Mat, cv::Mat> pair(rotation, translation);
     return pair;
 }
@@ -301,6 +322,7 @@ QQuaternion chessboard::get_rotation_matrix(bool placeholder)
 QQuaternion chessboard::cv_mat2qquaternion(cv::Mat rot_mat)
 {
     if(rot_mat.rows != 3 || rot_mat.cols != 3){
+        qDebug() << "Rows colums not matching";
         return QQuaternion();
     }
     QMatrix4x4 qrot_mat;
