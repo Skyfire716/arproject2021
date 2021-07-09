@@ -18,6 +18,7 @@ public:
     void clear_current();
     void optimize_current_board();
     void validate_current_board(cv::Mat image, int(*check_color)(cv::Mat image, cv::Point2f p));
+    void try_letter_detection(cv::Mat image);
     chessboard get_current_board();
     bool get_field(char letter, char number);
     QQuaternion get_ar_rotation();

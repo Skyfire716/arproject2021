@@ -58,6 +58,7 @@ public:
     cv::Point2f angled_vector_from_normal(cv::Point2f normal, float angle_deg);
     cv::Point2f getsubPixel(cv::Point2f point);
     cv::Point2f mean_point(QList<cv::Point> points);
+    cv::Point2f qvec2d2cv_point2f(QVector2D v);
     void harris_values(cv::Rect rect, QList<QPair<cv::Point, double>> *harris_features);
     void harris_edges(cv::Rect rect, QList<cv::Point> *edges);
     void harris_corner(cv::Rect rect, QList<cv::Point> *corners);

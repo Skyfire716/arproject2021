@@ -109,7 +109,28 @@ void chessboard::validating_colors(cv::Mat image, int(*check_color)(cv::Mat imag
 
 void chessboard::try_letter_detection(cv::Mat image)
 {
-
+    tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
+    if(api->Init(NULL, "eng")){
+        qDebug() << "Couldn't initialize Tesseract";
+        return;
+    }
+    qDebug() << "Tesseract Init";
+    char *outputText;
+    cv::Mat imageMarker(cv::Size(200, 200), image.type());
+    QPair<int, int> center_pair = get_board_corner_center_indizes(chessboard::TOP_LEFT_CORNER);
+    int x = center_pair.first, y = center_pair.second;
+    QVector2D left_distance(corners[x][y + 1][0] - corners[x][y][0]);
+    QVector2D right_distance(corners[x + 1][y + 1][0] - corners[x + 1][y][0]);
+    cv::warpPerspective(image, imageMarker, get_rotation_matrix(qvec2d2cv_point2f(corners[x][y + 1][0] + left_distance), qvec2d2cv_point2f(corners[x + 1][y + 1][0] + right_distance), qvec2d2cv_point2f(corners[x][y + 1][0]), qvec2d2cv_point2f(corners[x + 1][y + 1][0])), cv::Size(200, 200));
+    //QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);
+    //emit chessboard_updated(QPixmap::fromImage(img));
+    api->SetImage(imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.channels(), imageMarker.step);
+    outputText = api->GetUTF8Text();
+    QString ocr_output = QString::fromUtf8(outputText);
+    qDebug() << "OCR Output " << ocr_output;
+    api->End();
+    delete api;
+    delete [] outputText;
 }
 
 cv::Point2f chessboard::qvec2d2cv_point2f(QVector2D v)
@@ -323,6 +344,11 @@ void chessboard::drawRect(cv::Mat image, QPointF a, QPointF b, QPointF c, QPoint
     cv::line(image, qpoint2f2cv_point2f(a), qpoint2f2cv_point2f(c), cv::Scalar(0, 0, 255), 3, cv::LINE_8);
 }
 
+QVector2D chessboard::get_corner_by_indizes(int x, int y)
+{
+    return corners[x][y][0];
+}
+
 QPointF chessboard::get_board_corner(const int CORNER_CODE)
 {
     QPair<int, int> indizes = get_board_corner_indizes(CORNER_CODE);
@@ -468,7 +494,7 @@ QPair<QMatrix3x3, QVector3D> chessboard::get_rotation_translation()
     return QPair<QMatrix3x3, QVector3D>(rotMat, translationVec);
 }
 
-cv::Mat chessboard::get_rotation_matrix()
+cv::Mat chessboard::get_rotation_matrix(cv::Point2f tl, cv::Point2f tr, cv::Point2f br, cv::Point2f bl)
 {
     cv::Point2f dstPoints[4];
     dstPoints[0].x = -0.5; dstPoints[0].y = 0.5;
@@ -477,13 +503,19 @@ cv::Mat chessboard::get_rotation_matrix()
     dstPoints[3].x = -0.5; dstPoints[3].y = -0.5;
     cv::Mat homographyMatrix(cv::Size(3, 3), CV_32FC1);
     cv::Point2f targetCorners[4];
-    targetCorners[0] = qvec2d2cv_point2f(corners[0][1][0]);
-    targetCorners[1] = qvec2d2cv_point2f(corners[1][1][0]);
-    targetCorners[2] = qvec2d2cv_point2f(corners[1][0][0]);
-    targetCorners[3] = qvec2d2cv_point2f(corners[0][0][0]);
+    targetCorners[0] = tl;
+    targetCorners[1] = tr;
+    targetCorners[2] = br;
+    targetCorners[3] = bl;
     homographyMatrix = cv::getPerspectiveTransform(targetCorners, dstPoints);
     qDebug() << "Homography Mat";
     return homographyMatrix;
+}
+
+cv::Mat chessboard::get_rotation_matrix()
+{
+    return get_rotation_matrix(qvec2d2cv_point2f(corners[0][1][0]), qvec2d2cv_point2f(corners[1][1][0]),
+            qvec2d2cv_point2f(corners[1][0][0]), qvec2d2cv_point2f(corners[0][0][0]));
 }
 
 QQuaternion chessboard::get_rotation_matrix(bool placeholder)

@@ -247,6 +247,11 @@ cv::Point2f camera_worker::mean_point(QList<cv::Point> points)
     return mean / (points.length() * 1.0);
 }
 
+cv::Point2f camera_worker::qvec2d2cv_point2f(QVector2D v)
+{
+    return cv::Point2f(v.x(), v.y());
+}
+
 void camera_worker::harris_values(cv::Rect rect, QList<QPair<cv::Point, double> > *harris_features)
 {
     if(!rect_in_mat(threshold_image, rect)){
@@ -755,12 +760,27 @@ void camera_worker::run()
                                 cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
                                 my_chessboard_controller.optimize_current_board();
                                 my_chessboard_controller.validate_current_board(threshold_image, &check_color_wrapper);
-                                emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
+                                my_chessboard_controller.try_letter_detection(threshold_image);
+                                //emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 QPair<QQuaternion, QVector3D> trans = my_chessboard_controller.get_transform();
                                 QQuaternion q = trans.first;
                                 QVector3D transV = trans.second;
                                 emit new_ar_transform_singels(q.scalar(), q.x(), q.y(), q.z(), transV.x(), transV.y(), transV.z());
+
+                                cv::Mat imageMarker(cv::Size(200, 200), gray_image.type());
+                                QPair<int, int> center_pair = my_chessboard_controller.get_current_board().get_board_corner_center_indizes(chessboard::TOP_LEFT_CORNER);
+                                int x = center_pair.first, y = center_pair.second;
+                                QVector2D left_distance(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1) - my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y));
+                                QVector2D right_distance(my_chessboard_controller.get_current_board().get_corner_by_indizes(x + 1, y + 1) - my_chessboard_controller.get_current_board().get_corner_by_indizes(x + 1, y));
+                                cv::warpPerspective(gray_image, imageMarker, my_chessboard_controller.get_current_board().get_rotation_matrix(
+                                                        qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1) + left_distance),
+                                                        qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x + 1, y + 1) + right_distance),
+                                                        qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1)),
+                                                        qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x + 1, y + 1))), cv::Size(200, 200));
+                                QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);
+                                emit chessboard_updated(QPixmap::fromImage(img));
+
                                 my_chessboard_controller.switch_board();
                                 is_first = false;
                                 this->thread()->msleep(750);

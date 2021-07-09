@@ -31,6 +31,11 @@ void chessboard_controller::validate_current_board(cv::Mat image, int (*check_co
     boards[!active].validating_colors(image, check_color);
 }
 
+void chessboard_controller::try_letter_detection(cv::Mat image)
+{
+    boards[!active].try_letter_detection(image);
+}
+
 chessboard chessboard_controller::get_current_board()
 {
     return boards[!active];

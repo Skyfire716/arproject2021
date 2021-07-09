@@ -10,6 +10,7 @@
 #include <QGenericMatrix>
 #include <QQuaternion>
 #include <opencv2/opencv.hpp>
+#include <tesseract/baseapi.h>
 
 class chessboard : QObject
 {
@@ -47,6 +48,7 @@ public:
     void drawBoard(cv::Mat image);
     void drawRect(cv::Mat image, int x, int y);
     void drawRect(cv::Mat image, QPointF a, QPointF b, QPointF c, QPointF d);
+    QVector2D get_corner_by_indizes(int x, int y);
     QPointF get_board_corner(const int CORNER_CODE);
     QPair<int, int> get_board_corner_indizes(const int CORNER_CODE);
     QPair<int, int> get_board_corner_center_indizes(const int CORNER_CODE);
@@ -56,6 +58,7 @@ public:
     QVector2D get_center(char letter, char number);
     cv::Mat get_homography_matrix();
     QPair<QMatrix3x3, QVector3D> get_rotation_translation();
+    cv::Mat get_rotation_matrix(cv::Point2f tl, cv::Point2f tr, cv::Point2f br, cv::Point2f bl);
     cv::Mat get_rotation_matrix();
     QQuaternion get_rotation_matrix(bool placeholder);
     QQuaternion cv_mat2qquaternion(cv::Mat rot_mat);
