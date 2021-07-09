@@ -167,11 +167,12 @@ archesswidget::archesswidget(QWidget *parent) : QWidget(parent)
 
 void archesswidget::new_ar_transform_singels(float scalar, float xpos, float ypos, float zpos, float x, float y, float z)
 {
-    //QQuaternion q(scalar, xpos, ypos, zpos);
-    //QVector3D trans(x, y, z);
-    //qDebug() << "Applying Trans";
-    //bauerTransform->setRotation(q);
-    //bauerTransform->setTranslation(trans);
+    QQuaternion q(scalar, xpos, ypos, zpos);
+    QVector3D trans(x, y, -z);
+    qDebug() << "Applying Trans";
+    qDebug() << "Translation " << trans;
+    bauerTransform->setRotation(q);
+    bauerTransform->setTranslation(trans);
 }
 
 void archesswidget::resizeEvent(QResizeEvent *event)

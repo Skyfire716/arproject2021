@@ -751,14 +751,12 @@ void camera_worker::run()
                                 emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 QPair<QQuaternion, QVector3D> trans = my_chessboard_controller.get_transform();
-                                /*
                                 qDebug() << "Got Chessboard";
                                 QQuaternion q = trans.first;
                                 QVector3D transV = trans.second;
                                 qDebug() << "Created Subtypes";
                                 emit new_ar_transform_singels(q.scalar(), q.x(), q.y(), q.z(), transV.x(), transV.y(), transV.z());
                                 qDebug() << "Sendt To Arwidget";
-                                */
                                 //cv::Mat imageMarker(cv::Size(200, 200), camera_image.type());
                                 //cv::warpPerspective(camera_image, imageMarker, my_chessboard_controller.get_current_board().get_rotation_matrix(), cv::Size(200, 200));
                                 //QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);

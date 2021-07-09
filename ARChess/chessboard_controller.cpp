@@ -33,26 +33,14 @@ bool chessboard_controller::get_field(char letter, char number)
 
 QQuaternion chessboard_controller::get_ar_rotation()
 {
-    QPair<cv::Mat, cv::Mat> pair = boards[!active].get_rotation_translation();
-    cv::Mat rot = pair.first;
-    cv::Mat trans = pair.second;
-    QVector3D transform(trans.at<double>(0, 0), trans.at<double>(1, 0), trans.at<double>(2, 0));
-    qDebug() << "Trans " << transform;
-    return boards[!active].cv_mat2qquaternion(rot);
+    QPair<QMatrix3x3, QVector3D> pair = boards[!active].get_rotation_translation();
+    return QQuaternion::fromRotationMatrix(pair.first);
 }
 
 QPair<QQuaternion, QVector3D> chessboard_controller::get_transform()
 {
-    QPair<cv::Mat, cv::Mat> pair = boards[!active].get_rotation_translation();
-    /*
-    cv::Mat rot = pair.first;
-    cv::Mat trans = pair.second;
-    QVector3D transform(trans.at<double>(0, 0), trans.at<double>(1, 0), trans.at<double>(2, 0));
-    qDebug() << "Trans " << transform;
-    qDebug() << "Get Transform Run";
-    return QPair<QQuaternion, QVector3D>(boards[!active].cv_mat2qquaternion(rot), transform);
-    */
-    return QPair<QQuaternion, QVector3D>(QQuaternion(), QVector3D());
+    QPair<QMatrix3x3, QVector3D> pair = boards[!active].get_rotation_translation();
+    return QPair<QQuaternion, QVector3D>(QQuaternion::fromRotationMatrix(pair.first).normalized(), pair.second);
 }
 
 bool chessboard_controller::get_origin_color()
