@@ -5,6 +5,7 @@
 #include <QThread>
 #include <QPixmap>
 #include <opencv2/opencv.hpp>
+#include <opencv2/features2d.hpp>
 #include "chessboard_controller.h"
 //#include "chessboard.h"
 

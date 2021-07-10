@@ -80,4 +80,22 @@
         <file>resources/models/Queen.STL</file>
         <file>resources/models/Rook2.STL</file>
     </qresource>
+    <qresource prefix="/surfreferences">
+        <file>resources/surfreferences/1_SurfReference.png</file>
+        <file>resources/surfreferences/3_SurfReference.png</file>
+        <file>resources/surfreferences/4_SurfReference.png</file>
+        <file>resources/surfreferences/5_SurfReference.png</file>
+        <file>resources/surfreferences/6_SurfReference.png</file>
+        <file>resources/surfreferences/8_SurfReference.png</file>
+        <file>resources/surfreferences/A_SurfReference.png</file>
+        <file>resources/surfreferences/B_SurfReference.png</file>
+        <file>resources/surfreferences/C_SurfReference.png</file>
+        <file>resources/surfreferences/E_SurfReference.png</file>
+        <file>resources/surfreferences/D_SurfReference.png</file>
+        <file>resources/surfreferences/F_SurfReference.png</file>
+        <file>resources/surfreferences/G_SurfReference.png</file>
+        <file>resources/surfreferences/H_SurfReference.png</file>
+        <file>resources/surfreferences/2_SurfReference.png</file>
+        <file>resources/surfreferences/7_SurfReference.png</file>
+    </qresource>
 </RCC>

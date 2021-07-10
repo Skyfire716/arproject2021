@@ -58,7 +58,7 @@ public:
     QVector2D get_center(char letter, char number);
     cv::Mat get_homography_matrix();
     QPair<QMatrix3x3, QVector3D> get_rotation_translation();
-    cv::Mat get_rotation_matrix(cv::Point2f tl, cv::Point2f tr, cv::Point2f br, cv::Point2f bl);
+    cv::Mat get_rotation_matrix(cv::Point2f tl, cv::Point2f tr, cv::Point2f br, cv::Point2f bl, cv::Size areaOI);
     cv::Mat get_rotation_matrix();
     QQuaternion get_rotation_matrix(bool placeholder);
     QQuaternion cv_mat2qquaternion(cv::Mat rot_mat);
