@@ -10,7 +10,6 @@
 #include <QGenericMatrix>
 #include <QQuaternion>
 #include <opencv2/opencv.hpp>
-#include <tesseract/baseapi.h>
 
 class chessboard : QObject
 {

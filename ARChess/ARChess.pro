@@ -48,7 +48,6 @@ contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 
 linux-g++ | linux-g++-64 | linux-g++-32 {
     INCLUDEPATH += -I/usr/local/include/opencv2
-    INCLUDEPATH += -I/usr/include/tesseract
     LIBS += -L/usr/local/lib \
             -lopencv_calib3d \
             -lopencv_core \
@@ -67,8 +66,7 @@ linux-g++ | linux-g++-64 | linux-g++-32 {
             -lopencv_videoio \
             -lopencv_video \
             -lopencv_videostab \
-            -lopencv_viz \
-            -ltesseract
+            -lopencv_viz
 
 }
 

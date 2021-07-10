@@ -109,6 +109,7 @@ void chessboard::validating_colors(cv::Mat image, int(*check_color)(cv::Mat imag
 
 void chessboard::try_letter_detection(cv::Mat image)
 {
+    /*
     tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
     if(api->Init(NULL, "eng")){
         qDebug() << "Couldn't initialize Tesseract";
@@ -136,6 +137,7 @@ void chessboard::try_letter_detection(cv::Mat image)
     api->End();
     delete api;
     delete [] outputText;
+    */
 }
 
 cv::Point2f chessboard::qvec2d2cv_point2f(QVector2D v)
