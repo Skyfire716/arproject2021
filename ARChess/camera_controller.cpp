@@ -25,14 +25,18 @@ void camera_worker::initialize_camera()
     qDebug() << "Is open= " << temp_cam.isOpened();
 #endif
     do{
+        qDebug() << "Scan cam";
         temp_cam.open(camera_index);
+        qDebug() << "Scan cam1";
         found_cam = temp_cam.isOpened();
+        qDebug() << "Scan cam2";
         if(found_cam){
             qDebug() << "Backend " << QString::fromStdString(temp_cam.getBackendName());
             QString item_str;
             item_str = "Camera ";
             item_str.append(QString::number(camera_index));
             cv_cameras.append(camera_index);
+            qDebug() << "Scan cam3";
             emit camera_detected(item_str);
             qDebug() << "Found Camera " << camera_index;
         }
@@ -49,6 +53,18 @@ void camera_worker::change_camera(int cv_index)
     qDebug() << "Switching Cam in CV";
 }
 
+void camera_worker::change_threshold(int thresold)
+{
+    threshold_value_shared = thresold;
+    threshold_change_b = true;
+}
+
+void camera_worker::change_threshold_method(int threshold_method)
+{
+    thresold_method_shared = threshold_method;
+    threshold_method_b = true;
+}
+
 void camera_worker::run()
 {
     qDebug() << "Running";
@@ -59,7 +75,24 @@ void camera_worker::run()
         }
         if(switch_camera_b){
             switch_camera_b = false;
-            cv_camera.open(new_cv_index);
+            if(new_cv_index == -1){
+                qDebug() << "Load from File";
+#ifdef Q_OS_LINUX
+                cv_camera.open("../resources/videos/VID_20210603_121318.mp4");
+#else
+                //TODO Add your path to the camera here
+#endif
+            }else{
+                cv_camera.open(new_cv_index);
+            }
+        }
+        if(threshold_change_b){
+            threshold_change_b = false;
+            threshold_value = threshold_value_shared;
+        }
+        if(threshold_method_b){
+            threshold_method_b = false;
+            threshold_method = thresold_method_shared;
         }
         if(capture_b && cv_camera.isOpened()){
             cv_camera >> camera_image;
@@ -70,8 +103,35 @@ void camera_worker::run()
             /*
              * DO OpenCV Operations here
              **/
-            cv::cvtColor(camera_image, camera_image, CV_BGR2RGB);
-            QImage img((uchar*)camera_image.data, camera_image.cols, camera_image.rows, camera_image.step, QImage::Format_RGB888);
+            cv::cvtColor(camera_image, gray_image, CV_BGR2GRAY);
+            cv::threshold(gray_image, threshold_image, threshold_value, 255, threshold_method);
+            contour_vector_t contours;
+            cv::findContours(gray_image, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+            for(size_t k = 0; k < contours.size(); k++){
+                contour_t approx_contour;
+                cv::approxPolyDP(contours[k], approx_contour, cv::arcLength(contours[k], true) * 0.02, true);
+                contour_vector_t cov, approx;
+                cov.emplace_back(contours[k]);
+                approx.emplace_back(approx_contour);
+                if(approx_contour.size() > 1){
+                    cv::drawContours(camera_image, approx, -1, cv::Scalar(0, 255, 0), 4, 1);
+                    cv::drawContours(camera_image, cov, -1, cv::Scalar(255, 0, 0), 4, 1);
+                    continue;
+                }
+                cv::Scalar QUADRILATERAL_COLOR(0, 0, 255);
+                cv::Scalar colour;
+                cv::Rect r = cv::boundingRect(approx_contour);
+                cv::rectangle(camera_image, r, cv::Scalar(0, 0, 255), 4);
+            }
+            qDebug() << "Contours " << contours.size();
+            //Change the Pointer to result Image if you want to see another output mat
+            result_image = &camera_image;
+            if(result_image->channels() == 1){
+                cv::cvtColor(*result_image, *result_image, CV_GRAY2RGB);
+            }else if(result_image->channels() == 3){
+                cv::cvtColor(*result_image, *result_image, CV_BGR2RGB);
+            }
+            QImage img((uchar*)result_image->data, result_image->cols, result_image->rows, result_image->step, QImage::Format_RGB888);
             if (!img.isNull()){
                 emit image_ready(QPixmap::fromImage(img));
             }

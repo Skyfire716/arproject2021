@@ -15,6 +15,8 @@
 #include <QCheckBox>
 #include <opencv2/opencv.hpp>
 #include "camera_controller.h"
+#include <QOpenGLWidget>
+#include <QSlider>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -24,6 +26,8 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
+const QString EXAMPLE_VIDEO = "Video";
+
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -32,8 +36,9 @@ public:
 private slots:
     void on_camera_combbox_currentIndexChanged(int index);
     void receive_capture(QPixmap img);
-
     void on_pushButton_clicked();
+    void on_threshold_slider_id_valueChanged(int value);
+    void on_threshold_method_ui_currentIndexChanged(int index);
 
 public slots:
     void add_camerabox_item(QString item_name);
@@ -43,12 +48,14 @@ private:
     QLabel *openvc_version;
     QLabel *image_plane;
     QComboBox *camera_box;
-    QComboBox *color_box;
+    QComboBox *threshold_method_box;
+    QSlider *threshold_slider;
     QMap<int, QString> camera_select_map;
     QList<QCameraInfo> cameras;
     QCamera *active_camera;
     QCameraImageCapture *imagecapture;
     QImage::Format format;
     camera_controller *cam_control;
+    QOpenGLWidget *scene_3d;
 };
 #endif // MAINWINDOW_H
