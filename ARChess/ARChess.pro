@@ -64,6 +64,26 @@ linux-g++ | linux-g++-64 | linux-g++-32 {
 
 win32 {
  # TODO add Windows opencv includes
+    INCLUDEPATH += C:\opencv\build\opencv2
+    LIBS += C:\opencv\build\lib \
+            -lopencv_calib3d \
+            -lopencv_core \
+            -lopencv_dnn \
+            -lopencv_features2d \
+            -lopencv_flann \
+            -lopencv_highgui \
+            -lopencv_imgcodecs \
+            -lopencv_imgproc \
+            -lopencv_ml \
+            -lopencv_objdetect \
+            -lopencv_photo \
+            -lopencv_shape \
+            -lopencv_stitching \
+            -lopencv_superres \
+            -lopencv_videoio \
+            -lopencv_video \
+            -lopencv_videostab \
+            -lopencv_viz
 }
 
 
