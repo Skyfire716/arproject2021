@@ -163,8 +163,9 @@ void chessboard::setup_reference_data()
             cv::Mat reference_mat(q_reference_image.height(), q_reference_image.width(), CV_8UC3, (cv::Scalar*)q_reference_image.scanLine(0));
             cv::cvtColor(reference_mat, reference_mat, cv::COLOR_RGB2BGR);
             QPair<cv::Mat, std::vector<cv::KeyPoint>> result = get_referenceData(reference_mat);
-            descriptors[j] = result.first;
-            keypoints[j] = result.second;
+            descriptors[j * 8 + i - start_index] = result.first;
+            keypoints[j * 8 + i - start_index] = result.second;
+            qDebug() << "i " << i << " found " << result.second.size() << " keypoints in " << &keypoints[j * 8 + i - start_index];
             for(size_t l = 0; l < result.second.size(); l++){
                 chessboard::terms.append(chessboard::KeyPoint2QString(result.second.at(l)));
             }
@@ -217,29 +218,37 @@ QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>> chessboard::get_featur
 
 void chessboard::detect_simularities(cv::Mat *reference_descriptors, std::vector<cv::KeyPoint> *reference_keypoints, cv::Mat real_image)
 {
+    qDebug() << "Detect Simularities";
     QVector<QVector<QString>> current_word_container;
     QVector<QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>>> result_container;
     for(int i =  0; i < 8; i++){
+        qDebug() << "i: " << i;
+        qDebug() << "KeyPoint i " << &reference_keypoints[i];
+        qDebug() << "Descriptor i " << &reference_descriptors[i];
         QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>> result = get_features(reference_descriptors[i], reference_keypoints[i], real_image);
+        qDebug() << "Got feature";
         QVector<QString> word;
         QHash<int, int> map;
+        qDebug() << "Hashmap " << &map;
         for(size_t j = 0; j < result.second.size(); j++){
             cv::DMatch match = result.second.at(j);
             map.insert(match.queryIdx, match.trainIdx);
         }
+        qDebug() << "Hashmap Populated ";
         for(size_t j = 0; j < result.first.size(); j++){
-            cv::KeyPoint kp = reference_keypoints[j][map.value(j)];
+            qDebug() << "Keypoints " << &reference_keypoints[i];
+            qDebug() << "Keypoints size " << reference_keypoints[i].size();
+            qDebug() << "Maps to value " << map.value(j);
+            cv::KeyPoint kp = reference_keypoints[i][map.value(j)];
             word.append(KeyPoint2QString(kp));
         }
 
     }
+    qDebug() << "Simularities Done";
 }
 
 void chessboard::bla_wrapper(cv::Mat image)
 {
-    qDebug() << "Terms Pointer "  << QString::pointer(&terms);
-    qDebug() << "Terms descriptors " << QString::pointer(descriptors);
-    qDebug() << "KeyPoints Pointer " << QString::pointer(keypoints);
     QPair<int, int> center_pair = get_board_corner_center_indizes(chessboard::TOP_LEFT_CORNER);
     int x = center_pair.first, y = center_pair.second;
     QVector2D top_distance(get_corner_by_indizes(x, y + 1) - get_corner_by_indizes(x + 1, y + 1));
@@ -254,7 +263,9 @@ void chessboard::bla_wrapper(cv::Mat image)
                             qvec2d2cv_point2f(get_corner_by_indizes(x, y) + bottom_distance),
                             qvec2d2cv_point2f(get_corner_by_indizes(x, y + 1)),
                             qvec2d2cv_point2f(get_corner_by_indizes(x, y)), aOiSize), aOiSize);
-
+    for(int i = 0; i < 16; i++){
+        qDebug() << "i " << i << " Descriptor " << &descriptors[i] << " Keypoint " << &keypoints[i] << " " << keypoints[i].size();
+    }
     bool letter_detect = true;
     if(letter_detect){
         detect_simularities(descriptors, keypoints, imageMarker);
@@ -613,6 +624,7 @@ cv::Mat chessboard::get_homography_matrix_boardCorners(cv::Size areaOI)
 
 QPair<QMatrix3x3, QVector3D> chessboard::get_rotation_translation()
 {
+    /*
     qDebug() << "Starting Translation Row";
     for(int j = 0; j < 8; j++){
         for(int i = 0; i < 8; i++){
@@ -624,6 +636,7 @@ QPair<QMatrix3x3, QVector3D> chessboard::get_rotation_translation()
         }
     }
     qDebug() << "Ending Translation Row";
+    */
     return get_rotation_translation(qpoint2f2cv_point2f(get_board_corner(TOP_LEFT_CORNER)), qpoint2f2cv_point2f(get_board_corner(TOP_RIGHT_CORNER)),
                                     qpoint2f2cv_point2f(get_board_corner(BOTTOM_LEFT_CORNER)), qpoint2f2cv_point2f(get_board_corner(BOTTOM_RIGHT_CORNER)), cv::Size(200, 200));
 }
@@ -869,4 +882,9 @@ chessboard::chessboard(const chessboard &board)
     this->min_y = board.min_y;
     this->max_y = board.max_y;
     this->origin_index = board.origin_index;
+    this->terms.append(board.terms);
+    for(int i = 0; i < 16; i++){
+        this->keypoints[i] = board.keypoints[i];
+        this->descriptors[i] = board.descriptors[i];
+    }
 }

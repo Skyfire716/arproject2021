@@ -762,7 +762,7 @@ void camera_worker::run()
                                 my_chessboard_controller.optimize_current_board();
                                 my_chessboard_controller.validate_current_board(threshold_image, &check_color_wrapper);
                                 my_chessboard_controller.try_letter_detection(camera_image);
-                                //emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
+                                emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 QPair<QQuaternion, QVector3D> trans = my_chessboard_controller.get_transform();
                                 QQuaternion q = trans.first;
@@ -770,7 +770,7 @@ void camera_worker::run()
                                 emit new_ar_transform_singels(q.scalar(), q.x(), q.y(), q.z(), transV.x(), transV.y(), transV.z());
 
 
-                                my_chessboard_controller.get_current_board().bla_wrapper(camera_image);
+                                //my_chessboard_controller.get_current_board().bla_wrapper(camera_image);
 
                                 QPair<int, int> center_pair = my_chessboard_controller.get_current_board().get_board_corner_center_indizes(chessboard::TOP_LEFT_CORNER);
                                 int x = center_pair.first, y = center_pair.second;
@@ -795,11 +795,11 @@ void camera_worker::run()
                                 //Calculate SURF Descriptor and to some mediasearch
                                 QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);
                                 QPixmap pixmap = QPixmap::fromImage(img);
-                                emit chessboard_updated(pixmap);
+                                //emit chessboard_updated(pixmap);
 
                                 my_chessboard_controller.switch_board();
                                 is_first = false;
-                                this->thread()->msleep(1350);
+                                //this->thread()->msleep(1350);
                             }else{
                                 my_chessboard_controller.clear_current();
                             }
