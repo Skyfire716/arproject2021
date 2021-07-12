@@ -140,6 +140,148 @@ void chessboard::try_letter_detection(cv::Mat image)
     */
 }
 
+QPair<cv::Mat, std::vector<cv::KeyPoint>> chessboard::get_referenceData(cv::Mat reference)
+{
+    std::vector<cv::KeyPoint> reference_keypoints;
+    cv::Mat reference_descriptors;
+    cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
+    detector->detect(reference, reference_keypoints );
+    return QPair<cv::Mat, std::vector<cv::KeyPoint>>(reference_descriptors, reference_keypoints);
+}
+
+void chessboard::setup_reference_data()
+{
+    terms.clear();
+    for(int j = 0; j < 2; j++){
+        char start_index = (j < 1) ? 65 : 49;
+        char end_index = (j < 1) ? 73 : 57;
+        for(char i = start_index; i < end_index; i++){
+            QString filename = ":/surfreferences/resources/surfreferences/";
+            filename.append(i);
+            filename.append("_SurfReference.png");
+            QImage q_reference_image = QImage(filename).convertToFormat(QImage::Format_RGB888);
+            cv::Mat reference_mat(q_reference_image.height(), q_reference_image.width(), CV_8UC3, (cv::Scalar*)q_reference_image.scanLine(0));
+            cv::cvtColor(reference_mat, reference_mat, cv::COLOR_RGB2BGR);
+            QPair<cv::Mat, std::vector<cv::KeyPoint>> result = get_referenceData(reference_mat);
+            descriptors[j] = result.first;
+            keypoints[j] = result.second;
+            for(size_t l = 0; l < result.second.size(); l++){
+                chessboard::terms.append(chessboard::KeyPoint2QString(result.second.at(l)));
+            }
+        }
+    }
+}
+
+QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>> chessboard::get_features(cv::Mat reference_descriptors, std::vector<cv::KeyPoint> reference_keypoints, cv::Mat real_image)
+{
+    std::vector<cv::KeyPoint> real_keypoints;
+    cv::Mat real_descriptors;
+    cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
+    cv::Ptr<cv::DescriptorExtractor> descriptor = cv::ORB::create();
+
+    cv::Ptr<cv::DescriptorMatcher> matcher  = cv::DescriptorMatcher::create ( "BruteForce-Hamming" );
+    detector->detect(real_image,real_keypoints );
+    descriptor->compute(real_image, real_keypoints, real_descriptors);
+    std::vector<cv::DMatch> matches;
+    matcher->match(reference_descriptors, real_descriptors, matches );
+    double min_dist = 10000, max_dist = 0;
+    for (int i = 0; i < reference_descriptors.rows; i++)
+    {
+        double dist = matches[i].distance;
+        if (dist < min_dist) min_dist = dist;
+        if (dist > max_dist) max_dist = dist;
+    }
+    std::vector<cv::DMatch> good_matches;
+    for (int i = 0; i < reference_descriptors.rows; i++)
+    {
+        if (matches[i].distance <= qMax(2*min_dist, 30.0))
+        {
+            good_matches.push_back(matches[i]);
+        }
+    }
+
+    /*
+    cv::Mat img_match;
+    cv::Mat img_goodmatch;
+    drawMatches (reference, keypoints_1, real_image, keypoints_2, matches, img_match );
+    drawMatches (reference, keypoints_1, real_image, keypoints_2, good_matches, img_goodmatch );
+    imshow ( "所有匹配点对", img_match );
+    imshow ( "优化后匹配点对", img_goodmatch );
+    cv::waitKey(10);
+    cv::waitKey(10);
+    cv::waitKey(10);
+    cv::waitKey(10);
+    */
+    return QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>>(real_keypoints, good_matches);
+}
+
+void chessboard::detect_simularities(cv::Mat *reference_descriptors, std::vector<cv::KeyPoint> *reference_keypoints, cv::Mat real_image)
+{
+    QVector<QVector<QString>> current_word_container;
+    QVector<QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>>> result_container;
+    for(int i =  0; i < 8; i++){
+        QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>> result = get_features(reference_descriptors[i], reference_keypoints[i], real_image);
+        QVector<QString> word;
+        QHash<int, int> map;
+        for(size_t j = 0; j < result.second.size(); j++){
+            cv::DMatch match = result.second.at(j);
+            map.insert(match.queryIdx, match.trainIdx);
+        }
+        for(size_t j = 0; j < result.first.size(); j++){
+            cv::KeyPoint kp = reference_keypoints[j][map.value(j)];
+            word.append(KeyPoint2QString(kp));
+        }
+
+    }
+}
+
+void chessboard::bla_wrapper(cv::Mat image)
+{
+    qDebug() << "Terms Pointer "  << QString::pointer(&terms);
+    qDebug() << "Terms descriptors " << QString::pointer(descriptors);
+    qDebug() << "KeyPoints Pointer " << QString::pointer(keypoints);
+    QPair<int, int> center_pair = get_board_corner_center_indizes(chessboard::TOP_LEFT_CORNER);
+    int x = center_pair.first, y = center_pair.second;
+    QVector2D top_distance(get_corner_by_indizes(x, y + 1) - get_corner_by_indizes(x + 1, y + 1));
+    QVector2D bottom_distance(get_corner_by_indizes(x, y) - get_corner_by_indizes(x + 1, y));
+    float width_distance = (get_corner_by_indizes(x, y + 1) - get_corner_by_indizes(x, y)).length();
+    //cv::Size aOiSize(width_distance, (3/7.0) * width_distance);
+    cv::Size aOiSize(100, 100);
+    cv::Mat H = get_homography_matrix();
+    cv::Mat imageMarker(aOiSize, image.type());
+    cv::warpPerspective(image, imageMarker, get_rotation_matrix(
+                            qvec2d2cv_point2f(get_corner_by_indizes(x, y + 1) + top_distance),
+                            qvec2d2cv_point2f(get_corner_by_indizes(x, y) + bottom_distance),
+                            qvec2d2cv_point2f(get_corner_by_indizes(x, y + 1)),
+                            qvec2d2cv_point2f(get_corner_by_indizes(x, y)), aOiSize), aOiSize);
+
+    bool letter_detect = true;
+    if(letter_detect){
+        detect_simularities(descriptors, keypoints, imageMarker);
+    }else{
+        detect_simularities(&descriptors[8], &keypoints[8], imageMarker);
+    }
+}
+
+QString chessboard::KeyPoint2QString(cv::KeyPoint kp)
+{
+    QString text;
+    text.append(QString::number(kp.angle));
+    text.append(",");
+    text.append(QString::number(kp.class_id));
+    text.append(",");
+    text.append(QString::number(kp.octave));
+    text.append(",");
+    text.append(QString::number(kp.pt.x));
+    text.append(",");
+    text.append(QString::number(kp.pt.y));
+    text.append(",");
+    text.append(QString::number(kp.response));
+    text.append(",");
+    text.append(QString::number(kp.size));
+    return text;
+}
+
 cv::Point2f chessboard::qvec2d2cv_point2f(QVector2D v)
 {
     return cv::Point2f(v.x(), v.y());
@@ -255,6 +397,12 @@ bool chessboard::add_field(QVector2D local_offset, QPointF tl_corner, QPointF tr
         qDebug() << "Error in Indexes";
         return false;
     }
+    /*
+    qDebug() << "MinX " << min_x;
+    qDebug() << "MinY " << min_y;
+    qDebug() << "MaxX " << max_x;
+    qDebug() << "MaxY " << max_y;
+    */
     int x_index = local_offset.x();
     int y_index = local_offset.y();
     if(x_index < 0){
@@ -457,26 +605,56 @@ cv::Mat chessboard::get_homography_matrix()
     return homographyMatrix;
 }
 
+cv::Mat chessboard::get_homography_matrix_boardCorners(cv::Size areaOI)
+{
+    return get_rotation_matrix(qpoint2f2cv_point2f(get_board_corner(TOP_LEFT_CORNER)), qpoint2f2cv_point2f(get_board_corner(TOP_RIGHT_CORNER)),
+                               qpoint2f2cv_point2f(get_board_corner(BOTTOM_LEFT_CORNER)), qpoint2f2cv_point2f(get_board_corner(BOTTOM_RIGHT_CORNER)), areaOI);
+}
+
 QPair<QMatrix3x3, QVector3D> chessboard::get_rotation_translation()
 {
+    qDebug() << "Starting Translation Row";
+    for(int j = 0; j < 8; j++){
+        for(int i = 0; i < 8; i++){
+            get_rotation_translation(qpoint2f2cv_point2f(corners[i][j + 1][0].toPointF()),
+                                     qpoint2f2cv_point2f(corners[i + 1][j + 1][0].toPointF()),
+                                     qpoint2f2cv_point2f(corners[i + 1][j][0].toPointF()),
+                                     qpoint2f2cv_point2f(corners[i][j][0].toPointF()),
+                                     cv::Size(200, 200));
+        }
+    }
+    qDebug() << "Ending Translation Row";
+    return get_rotation_translation(qpoint2f2cv_point2f(get_board_corner(TOP_LEFT_CORNER)), qpoint2f2cv_point2f(get_board_corner(TOP_RIGHT_CORNER)),
+                                    qpoint2f2cv_point2f(get_board_corner(BOTTOM_LEFT_CORNER)), qpoint2f2cv_point2f(get_board_corner(BOTTOM_RIGHT_CORNER)), cv::Size(200, 200));
+}
+
+QPair<QMatrix3x3, QVector3D> chessboard::get_rotation_translation(cv::Point2f tl, cv::Point2f tr, cv::Point2f br, cv::Point2f bl, cv::Size areaOI)
+{
     cv::Mat K(cv::Size(3, 3), CV_64FC1);    //Intrinsic Camera Parameters
-    cv::Mat H = get_homography_matrix();
+    cv::Mat H = get_rotation_matrix(tl, tr, br, bl, areaOI);
     QVector3D colX(H.at<double>(0, 0), H.at<double>(1, 0), H.at<double>(2, 0));
     QVector3D colY(H.at<double>(0, 1), H.at<double>(1, 1), H.at<double>(2, 1));
     QVector3D colZ(H.at<double>(0, 2), H.at<double>(1, 2), H.at<double>(2, 2));
+    QMatrix4x4 qH;
+    qH.setColumn(0, colX);
+    qH.setColumn(1, colY);
+    qH.setColumn(2, colZ);
     float lense_focal_length = 634.0;
     float fMarkerSize = 0.032;
     const double fScaleLeft[3] = { 1.0f / lense_focal_length, 1.0f / lense_focal_length, -1.0f };
     const double fScaleRight[3] = { 1.0f / fMarkerSize, 1.0f / fMarkerSize, 1.0f };
-    colX.setX(colX.x() * fScaleLeft[0] * fScaleRight[0]);
-    colX.setY(colX.y() * fScaleLeft[1] * fScaleRight[0]);
-    colX.setZ(colX.z() * fScaleLeft[2] * fScaleRight[0]);
-    colY.setX(colY.x() * fScaleLeft[0] * fScaleRight[1]);
-    colY.setY(colY.y() * fScaleLeft[1] * fScaleRight[1]);
-    colY.setZ(colY.z() * fScaleLeft[2] * fScaleRight[1]);
-    colZ.setX(colZ.x() * fScaleLeft[0] * fScaleRight[2]);
-    colZ.setY(colZ.y() * fScaleLeft[1] * fScaleRight[2]);
-    colZ.setZ(colZ.z() * fScaleLeft[2] * fScaleRight[2]);
+    // R = C^-1 H S^-1
+    QMatrix4x4 qK;
+    qK.setColumn(0, QVector4D(1.0f / lense_focal_length, 0, 0, 0));
+    qK.setColumn(1, QVector4D(0, 1.0f / lense_focal_length, 0, 0));
+    qK.setColumn(2, QVector4D(0, 0, 1, 0));
+    qK.setColumn(3, QVector4D(0, 0, 0, 1));
+    double lense_times_marker = (1.0f / lense_focal_length) * (1.0f / fMarkerSize);
+    QVector3D col0(lense_times_marker, lense_times_marker, -1.0f / fMarkerSize);
+    QVector3D col1(1.0f / lense_focal_length, 1.0f / lense_focal_length, -1.0f);
+    colX *= col0;
+    colY *= col0;
+    colZ *= col1;
     if(colZ.z() > 0.0f){
         colX *= -1;
         colY *= -1;
@@ -498,6 +676,48 @@ QPair<QMatrix3x3, QVector3D> chessboard::get_rotation_translation()
     bigRotMat.setColumn(1, colY.toVector4D());
     bigRotMat.setColumn(2, colZ.toVector4D());
     QMatrix3x3 rotMat = bigRotMat.toGenericMatrix<3, 3>();
+    QPointF a = get_board_corner(TOP_LEFT_CORNER);
+    QPointF b = get_board_corner(BOTTOM_LEFT_CORNER);
+    QPointF d = get_board_corner(BOTTOM_RIGHT_CORNER);
+    QPointF c = get_board_corner(TOP_RIGHT_CORNER);
+    QVector3D qa(a);
+    QVector3D qb(b);
+    QVector3D qc(c);
+    QVector3D qd(d);
+    qa.setZ(1);
+    qb.setZ(1);
+    qc.setZ(1);
+    qd.setZ(1);
+    //qDebug() << "2d QA " << qa;
+    //qDebug() << "2d QB " << qb;
+    //qDebug() << "2d QC " << qc;
+    //qDebug() << "2d QD " << qd;
+    //qDebug() << "H Invertable " << (qH.determinant() != 0);
+    if(qH.determinant() != 0){
+        //qDebug() << "3d QA " << (qa * qK.inverted()) * qH.inverted();
+        //qDebug() << "3d QB " << (qb * qK.inverted()) * qH.inverted();
+        //qDebug() << "3d QC " << (qc * qK.inverted()) * qH.inverted();
+        //qDebug() << "3d QD " << (qd * qK.inverted()) * qH.inverted();
+        QVector3D qa3d = qa * qK.inverted() * qH.inverted();
+        QVector3D qb3d = qb * qK.inverted() * qH.inverted();
+        QVector3D qc3d = qc * qK.inverted() * qH.inverted();
+        QVector3D qd3d = qd * qK.inverted() * qH.inverted();
+        QVector3D center = qa3d + ((qd3d - qa3d) / 2.0);
+        //qDebug() << "Center 3D Coord " << center;
+        //qDebug() << "Center 2D Coord " << qK * qH * center;
+        qDebug() << "Trans " << translationVec;
+        //translationVec += center;
+    }
+
+    /*
+    QLineF diagA(get_board_corner(TOP_LEFT_CORNER), get_board_corner(BOTTOM_RIGHT_CORNER));
+    QLineF diagB(get_board_corner(TOP_RIGHT_CORNER), get_board_corner(BOTTOM_LEFT_CORNER));
+    QPointF center;
+    if(QLineF::NoIntersection != diagA.intersect(diagB, &center)){
+        QQuaternion q = QQuaternion::fromRotationMatrix(rotMat);
+        translationVec = q.rotatedVector(QVector3D(center.x(), center.y(), 1));
+    }
+    */
     return QPair<QMatrix3x3, QVector3D>(rotMat, translationVec);
 }
 
@@ -510,10 +730,19 @@ cv::Mat chessboard::get_rotation_matrix(cv::Point2f tl, cv::Point2f tr, cv::Poin
     dstPoints[2].x = 0; dstPoints[2].y = 600;
     dstPoints[3].x = 600; dstPoints[3].y = 600;
     */
+
     dstPoints[0].x = 0; dstPoints[0].y = 0;
     dstPoints[1].x = areaOI.width; dstPoints[1].y = 0;
     dstPoints[2].x = 0; dstPoints[2].y = areaOI.height;
     dstPoints[3].x = areaOI.width; dstPoints[3].y = areaOI.height;
+    /*
+    double w = areaOI.width / 2.0;
+    double h = areaOI.height / 2.0;
+    dstPoints[0].x = -w; dstPoints[0].y = -h;
+    dstPoints[1].x = w; dstPoints[1].y = -h;
+    dstPoints[2].x = -w; dstPoints[2].y = h;
+    dstPoints[3].x = w; dstPoints[3].y = h;
+    */
     cv::Mat homographyMatrix(cv::Size(3, 3), CV_32FC1);
     cv::Point2f srcCorners[4];
     srcCorners[0] = tl;

@@ -2,7 +2,12 @@
 
 chessboard_controller::chessboard_controller()
 {
-    
+}
+
+void chessboard_controller::setup()
+{
+    boards[0].setup_reference_data();
+    boards[1].setup_reference_data();
 }
 
 bool chessboard_controller::add_rect(QVector2D local_offset, QPointF tl_corner, QPointF tr_corner, QPointF bl_corner, QPointF br_corner, QPointF center, bool color)
@@ -95,4 +100,13 @@ QImage chessboard_controller::get_image()
         }
     }
     return img;
+}
+
+QPair<cv::Mat, std::vector<cv::KeyPoint>> chessboard_controller::get_referenceData(cv::Mat reference)
+{
+    std::vector<cv::KeyPoint> reference_keypoints;
+    cv::Mat reference_descriptors;
+    cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
+    detector->detect(reference, reference_keypoints );
+    return QPair<cv::Mat, std::vector<cv::KeyPoint>>(reference_descriptors, reference_keypoints);
 }

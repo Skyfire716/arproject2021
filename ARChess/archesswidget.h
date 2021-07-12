@@ -44,6 +44,10 @@ public slots:
     void new_ar_transform_singels(float scalar, float xpos, float ypos, float zpos, float x, float y, float z);
     
 private:
+    Qt3DRender::QLayer *objectsLayer;
+    Qt3DCore::QEntity *rootEntity;
+    Qt3DCore::QTransform *white_figures[16];
+    Qt3DCore::QTransform *black_figures[16];
     Qt3DCore::QTransform *monkeyTransform;
     Qt3DCore::QTransform *bauerTransform;
     Qt3DCore::QTransform *fieldTransform;
@@ -61,6 +65,7 @@ protected:
     // QObject interface
 public:
     bool eventFilter(QObject *watched, QEvent *event);
+    void instantiate_figures();
 };
 
 #endif // ARCHESSWIDGET_H

@@ -13,6 +13,7 @@ class chessboard_controller : QObject
     Q_OBJECT
 public:
     chessboard_controller();
+    void setup();
     bool add_rect(QVector2D local_offset, QPointF tl_corner, QPointF tr_corner, QPointF bl_corner, QPointF br_corner, QPointF center, bool color);
     void switch_board();
     void clear_current();
@@ -25,12 +26,11 @@ public:
     QPair<QQuaternion, QVector3D> get_transform();
     bool get_origin_color();
     QImage get_image();
-    
+
 private:
+    QPair<cv::Mat, std::vector<cv::KeyPoint>> get_referenceData(cv::Mat reference);
     chessboard boards[2];
     bool active;
-    
-    
 };
 
 #endif // CHESSBOARD_CONTROLLER_H

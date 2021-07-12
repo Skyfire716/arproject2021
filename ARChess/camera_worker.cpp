@@ -611,6 +611,7 @@ void camera_worker::initialize_camera()
         //qDebug() << "Searching camera " << camera_index;
     }while(found_cam || camera_index < 10);
     qDebug() << "Found "  << cv_cameras.length() << " Cameras";
+    my_chessboard_controller.setup();
 }
 
 void camera_worker::change_camera(int cv_index)
@@ -762,12 +763,14 @@ void camera_worker::run()
                                 my_chessboard_controller.validate_current_board(threshold_image, &check_color_wrapper);
                                 my_chessboard_controller.try_letter_detection(camera_image);
                                 //emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
-                                my_chessboard_controller.get_current_board().drawBoard(gray_image);
+                                my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 QPair<QQuaternion, QVector3D> trans = my_chessboard_controller.get_transform();
                                 QQuaternion q = trans.first;
                                 QVector3D transV = trans.second;
                                 emit new_ar_transform_singels(q.scalar(), q.x(), q.y(), q.z(), transV.x(), transV.y(), transV.z());
 
+
+                                my_chessboard_controller.get_current_board().bla_wrapper(camera_image);
 
                                 QPair<int, int> center_pair = my_chessboard_controller.get_current_board().get_board_corner_center_indizes(chessboard::TOP_LEFT_CORNER);
                                 int x = center_pair.first, y = center_pair.second;
@@ -775,12 +778,19 @@ void camera_worker::run()
                                 QVector2D bottom_distance(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y) - my_chessboard_controller.get_current_board().get_corner_by_indizes(x + 1, y));
                                 float width_distance = (my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1) - my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y)).length();
                                 cv::Size aOiSize(width_distance, (3/7.0) * width_distance);
+                                //cv::Size aOiSize(200, 200);
+                                cv::Mat H = my_chessboard_controller.get_current_board().get_homography_matrix();
                                 cv::Mat imageMarker(aOiSize, gray_image.type());
+
                                 cv::warpPerspective(gray_image, imageMarker, my_chessboard_controller.get_current_board().get_rotation_matrix(
                                                         qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1) + top_distance),
                                                         qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y) + bottom_distance),
                                                         qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1)),
                                                         qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y)), aOiSize), aOiSize);
+
+                                /*
+                                cv::warpPerspective(gray_image, imageMarker, my_chessboard_controller.get_current_board().get_homography_matrix_boardCorners(aOiSize), aOiSize);
+                                */
                                 cv::cvtColor(imageMarker, imageMarker, cv::COLOR_GRAY2RGB);
                                 //Calculate SURF Descriptor and to some mediasearch
                                 QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);
@@ -789,7 +799,7 @@ void camera_worker::run()
 
                                 my_chessboard_controller.switch_board();
                                 is_first = false;
-                                this->thread()->msleep(750);
+                                this->thread()->msleep(1350);
                             }else{
                                 my_chessboard_controller.clear_current();
                             }
