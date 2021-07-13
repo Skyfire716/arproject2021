@@ -107,39 +107,6 @@ void chessboard::validating_colors(cv::Mat image, int(*check_color)(cv::Mat imag
     }
 }
 
-void chessboard::try_letter_detection(cv::Mat image)
-{
-    /*
-    tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
-    if(api->Init(NULL, "eng")){
-        qDebug() << "Couldn't initialize Tesseract";
-        return;
-    }
-    qDebug() << "Tesseract Init";
-    char *outputText;
-    QPair<int, int> center_pair = get_board_corner_center_indizes(chessboard::TOP_LEFT_CORNER);
-    int x = center_pair.first, y = center_pair.second;
-    QVector2D top_distance(get_corner_by_indizes(x, y + 1) - get_corner_by_indizes(x + 1, y + 1));
-    QVector2D bottom_distance(get_corner_by_indizes(x, y) - get_corner_by_indizes(x + 1, y));
-    float width_distance = (get_corner_by_indizes(x, y + 1) - get_corner_by_indizes(x, y)).length();
-    cv::Size aOiSize(width_distance, (3/7.0) * width_distance);
-    cv::Mat imageMarker(aOiSize, image.type());
-    cv::warpPerspective(image, imageMarker, get_rotation_matrix(
-                            qvec2d2cv_point2f(get_corner_by_indizes(x, y + 1) + top_distance),
-                            qvec2d2cv_point2f(get_corner_by_indizes(x, y) + bottom_distance),
-                            qvec2d2cv_point2f(get_corner_by_indizes(x, y + 1)),
-                            qvec2d2cv_point2f(get_corner_by_indizes(x, y)), aOiSize), aOiSize);
-    cv::flip(imageMarker, imageMarker, 0);
-    api->SetImage(imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.channels(), imageMarker.step);
-    outputText = api->GetUTF8Text();
-    QString ocr_output = QString::fromUtf8(outputText);
-    qDebug() << "OCR Output " << ocr_output;
-    api->End();
-    delete api;
-    delete [] outputText;
-    */
-}
-
 QPair<cv::Mat, std::vector<cv::KeyPoint>> chessboard::get_referenceData(cv::Mat reference)
 {
     std::vector<cv::KeyPoint> reference_keypoints;

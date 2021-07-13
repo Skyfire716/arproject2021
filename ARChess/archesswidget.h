@@ -48,9 +48,7 @@ private:
     Qt3DCore::QEntity *rootEntity;
     Qt3DCore::QTransform *white_figures[16];
     Qt3DCore::QTransform *black_figures[16];
-    Qt3DCore::QTransform *monkeyTransform;
     Qt3DCore::QTransform *bauerTransform;
-    Qt3DCore::QTransform *fieldTransform;
     QBoxLayout *layout;
     QWidget *m_3d_window_container;
     Qt3DExtras::Qt3DWindow *m_3d_window;

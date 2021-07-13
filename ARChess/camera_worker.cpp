@@ -384,8 +384,6 @@ bool camera_worker::probe_neighbours(cv::Point2f tl, cv::Point2f tr, cv::Point2f
     cv::Point2f center_point = intersection_P2PLine_P2PLine(tl, br, tr, bl);
     int center_color = check_color(threshold_image, center_point, 50);
     if(center_color == 2){
-        //cv::rectangle(camera_image, cv::Rect(center_point, cv::Size(20, 20)), cv::Scalar(0, 0, 255), 5, cv::LINE_8);
-        //cv::putText(camera_image, "C", center_point, cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 0, 255), 4, cv::LINE_8);
         return false;
     }
     if(!chesscontroller.add_rect(current_pos, cv_point2f2qpoint(tl), cv_point2f2qpoint(tr), cv_point2f2qpoint(bl), cv_point2f2qpoint(br), cv_point2f2qpoint(center_point), center_color)){
@@ -691,9 +689,6 @@ void camera_worker::run()
                 qDebug() << "Image empty";
                 break;
             }
-            /*
-             * DO OpenCV Operations here
-             **/
             cv::cvtColor(camera_image, gray_image, CV_BGR2GRAY);
             if(threshold_method == 5){
                 cv::adaptiveThreshold(gray_image, threshold_image, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 33, 5);
@@ -711,7 +706,6 @@ void camera_worker::run()
                 contour_vector_t cov, approx;
                 cov.emplace_back(contours[k]);
                 approx.emplace_back(approx_contour);
-                //cv::drawContours(camera_image, cov, -1, cv::Scalar(255, 0, 0), 4, 1);
                 cv::Scalar color(0, 0, 255);
                 if(approx_contour.size() == 4 && boundingRects[k].area() > 200){
                     cv::Point *a = NULL;
@@ -732,23 +726,6 @@ void camera_worker::run()
                         if(qIsNaN(center_point.x) || qIsNaN(center_point.y) || center_point.x < 0 || center_point.x > threshold_image.cols || center_point.y < 0 || center_point.y > threshold_image.rows){
                             continue;
                         }
-                        //Diagonale durch laufen
-                        cv::Point2f lineAC = line_P2P(*a, *c);
-                        cv::Point2f lineAB = line_P2P(*a, *b);
-                        cv::Point2f lineCD = line_P2P(*c, *d);
-                        cv::Point2f lineBD = line_P2P(*b, *d);
-                        normalizeVec(&lineAC);
-                        normalizeVec(&lineAB);
-                        normalizeVec(&lineCD);
-                        normalizeVec(&lineBD);
-                        cv::Point2f normalLineAC(-lineAC.y, lineAC.x);
-                        cv::Point2f normalLineAB(-lineAB.y, lineAB.x);
-                        cv::Point2f normalLineCD(-lineCD.y, lineCD.x);
-                        cv::Point2f normalLineBD(-lineBD.y, lineBD.x);
-                        cv::Point2f diagonalA = line_P2P(*a, *d);
-                        cv::Point2f diagonalB = line_P2P(*b, *c);
-                        normalizeVec(&diagonalA);
-                        normalizeVec(&diagonalB);
                         if(is_first){
                             QSet<QPair<int, int>> valid;
                             QSet<QPair<int, int>> no_field;
@@ -762,55 +739,21 @@ void camera_worker::run()
                                 my_chessboard_controller.optimize_current_board();
                                 my_chessboard_controller.validate_current_board(threshold_image, &check_color_wrapper);
                                 my_chessboard_controller.try_letter_detection(camera_image);
-                                //emit chessboard_updated(QPixmap::fromImage(my_chessboard_controller.get_image()));
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 QPair<QQuaternion, QVector3D> trans = my_chessboard_controller.get_transform();
                                 QQuaternion q = trans.first;
                                 QVector3D transV = trans.second;
                                 emit new_ar_transform_singels(q.scalar(), q.x(), q.y(), q.z(), transV.x(), transV.y(), transV.z());
 
-
-                                my_chessboard_controller.get_current_board().bla_wrapper(camera_image);
-
-                                QPair<int, int> center_pair = my_chessboard_controller.get_current_board().get_board_corner_center_indizes(chessboard::TOP_LEFT_CORNER);
-                                int x = center_pair.first, y = center_pair.second;
-                                QVector2D top_distance(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1) - my_chessboard_controller.get_current_board().get_corner_by_indizes(x + 1, y + 1));
-                                QVector2D bottom_distance(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y) - my_chessboard_controller.get_current_board().get_corner_by_indizes(x + 1, y));
-                                float width_distance = (my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1) - my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y)).length();
-                                cv::Size aOiSize(width_distance, (3/7.0) * width_distance);
-                                //cv::Size aOiSize(200, 200);
-                                cv::Mat H = my_chessboard_controller.get_current_board().get_homography_matrix();
-                                cv::Mat imageMarker(aOiSize, gray_image.type());
-
-                                cv::warpPerspective(gray_image, imageMarker, my_chessboard_controller.get_current_board().get_rotation_matrix(
-                                                        qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1) + top_distance),
-                                                        qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y) + bottom_distance),
-                                                        qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y + 1)),
-                                                        qvec2d2cv_point2f(my_chessboard_controller.get_current_board().get_corner_by_indizes(x, y)), aOiSize), aOiSize);
-
-                                /*
-                                cv::warpPerspective(gray_image, imageMarker, my_chessboard_controller.get_current_board().get_homography_matrix_boardCorners(aOiSize), aOiSize);
-                                */
-                                cv::cvtColor(imageMarker, imageMarker, cv::COLOR_GRAY2RGB);
-                                //Calculate SURF Descriptor and to some mediasearch
-                                QImage img((uchar*)imageMarker.data, imageMarker.cols, imageMarker.rows, imageMarker.step, QImage::Format_RGB888);
-                                QPixmap pixmap = QPixmap::fromImage(img);
-                                emit chessboard_updated(pixmap);
-
                                 my_chessboard_controller.switch_board();
                                 is_first = false;
-                                this->thread()->msleep(1350);
                             }else{
                                 my_chessboard_controller.clear_current();
                             }
-
-                            //this->thread()->msleep(750);
                         }
                     }
-                    //cv::polylines(camera_image, approx_contour, true, color, 4);
                 }
             }
-            //Change the Pointer to result Image if you want to see another output mat
             if(result_image_index_b){
                 switch (result_image_index) {
                     case 0: result_image = &camera_image;

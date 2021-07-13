@@ -31,7 +31,6 @@ public:
     void clear();
     void optimize_chessboard();
     void validating_colors(cv::Mat image, int(*check_color)(cv::Mat image, cv::Point2f p));
-    void try_letter_detection(cv::Mat image);
     void setup_reference_data();
     QVector<int> index_keypoints(QVector<cv::KeyPoint> keypoints, QVector<QString> terms);
     QVector<int> index_keypoints(std::vector<cv::KeyPoint> keypoints, QVector<QString> terms);
