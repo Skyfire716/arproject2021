@@ -8,6 +8,7 @@
 #include <QLineF>
 #include <QImage>
 #include <QMatrix4x4>
+#include <QPair>
 #include <QGenericMatrix>
 #include <QQuaternion>
 #include <opencv2/opencv.hpp>
@@ -16,7 +17,7 @@
 class chessboard : QObject
 {
     Q_OBJECT
-
+    const int MEDIA_SEARCH_LOG_BASE = 5;
 public:
     static const int BLACK = 0;
     static const int WHITE = 1;
@@ -32,6 +33,20 @@ public:
     void validating_colors(cv::Mat image, int(*check_color)(cv::Mat image, cv::Point2f p));
     void try_letter_detection(cv::Mat image);
     void setup_reference_data();
+    QVector<int> index_keypoints(QVector<cv::KeyPoint> keypoints, QVector<QString> terms);
+    QVector<int> index_keypoints(std::vector<cv::KeyPoint> keypoints, QVector<QString> terms);
+    int term_frequency(QString term, QVector<int> document, QVector<QString> terms);
+    int term_frequency(int term_index, QVector<int> document);
+    int document_frequency(QString term, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms);
+    int document_frequency(int term_index, QVector<QPair<char, QVector<int>>> documents);
+    float inverse_document_frequency(QString term, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms);
+    float inverse_document_frequency(int term_index, QVector<QPair<char, QVector<int>>> documents);
+    float tf_idf(QString term, int document_index, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms);
+    float tf_idf(int term_index, int document_index, QVector<QPair<char, QVector<int>>> documents);
+    float tf_idf(QString term, QVector<int> q, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms);
+    float tf_idf(int term_index, QVector<int> q, QVector<QPair<char, QVector<int>>> documents);
+    float simularities(QVector<float> a, QVector<float> b);
+    QVector<QPair<char, float>> score(QVector<int> q, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms);
     QPair<cv::Mat, std::vector<cv::KeyPoint>> get_referenceData(cv::Mat reference);
     QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>> get_features(cv::Mat reference_descriptors, std::vector<cv::KeyPoint>, cv::Mat real_image);
     void detect_simularities(cv::Mat *reference_descriptors, std::vector<cv::KeyPoint> *reference_keypoints, cv::Mat real_image);
@@ -83,7 +98,10 @@ private:
     int max_x, min_x, max_y, min_y;
     cv::Mat descriptors[16];
     std::vector<cv::KeyPoint> keypoints[16];
-    QVector<QString> terms;
+    QVector<QPair<char, QVector<int>>> letter_vectors;
+    QVector<QPair<char, QVector<int>>> number_vectors;
+    QVector<QString> letterterms;
+    QVector<QString> numberterms;
 };
 
 

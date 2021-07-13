@@ -145,13 +145,16 @@ QPair<cv::Mat, std::vector<cv::KeyPoint>> chessboard::get_referenceData(cv::Mat 
     std::vector<cv::KeyPoint> reference_keypoints;
     cv::Mat reference_descriptors;
     cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
-    detector->detect(reference, reference_keypoints );
+    cv::Ptr<cv::DescriptorExtractor> descriptor = cv::ORB::create();
+    detector->detect(reference, reference_keypoints);
+    descriptor->compute(reference, reference_keypoints, reference_descriptors);
     return QPair<cv::Mat, std::vector<cv::KeyPoint>>(reference_descriptors, reference_keypoints);
 }
 
 void chessboard::setup_reference_data()
 {
-    terms.clear();
+    letterterms.clear();
+    numberterms.clear();
     for(int j = 0; j < 2; j++){
         char start_index = (j < 1) ? 65 : 49;
         char end_index = (j < 1) ? 73 : 57;
@@ -166,11 +169,145 @@ void chessboard::setup_reference_data()
             descriptors[j * 8 + i - start_index] = result.first;
             keypoints[j * 8 + i - start_index] = result.second;
             qDebug() << "i " << i << " found " << result.second.size() << " keypoints in " << &keypoints[j * 8 + i - start_index];
+            qDebug() << "i " << i << " found " << descriptors[j * 8 + i - start_index].empty() << " rows " << descriptors[j * 8 + i - start_index].rows << " " << descriptors[j * 8 + i - start_index].cols;
             for(size_t l = 0; l < result.second.size(); l++){
-                chessboard::terms.append(chessboard::KeyPoint2QString(result.second.at(l)));
+                if(j == 0){
+                    letterterms.append(chessboard::KeyPoint2QString(result.second.at(l)));
+                }else{
+                    numberterms.append(chessboard::KeyPoint2QString(result.second.at(l)));
+                }
             }
         }
     }
+    qSort(letterterms);
+    qSort(numberterms);
+    for(int j = 0; j < 2; j++){
+        char start_index = (j < 1) ? 65 : 49;
+        char end_index = (j < 1) ? 73 : 57;
+        for(char i = start_index; i < end_index; i++){
+            if(j == 0){
+                letter_vectors.append(QPair<char, QVector<int>>(i, index_keypoints(keypoints[j * 8 + i - start_index], letterterms)));
+            }else{
+                number_vectors.append(QPair<char, QVector<int>>(i, index_keypoints(keypoints[j * 8 + i - start_index], numberterms)));
+            }
+        }
+    }
+}
+
+QVector<int> chessboard::index_keypoints(QVector<cv::KeyPoint> keypoints, QVector<QString> terms)
+{
+    QVector<int> result;
+    QVector<QString> keystring;
+    for(cv::KeyPoint kp : keypoints){
+        keystring.append(KeyPoint2QString(kp));
+    }
+    for(QString term : terms){
+        if(keystring.contains(term)){
+            result.append(1);
+        }else{
+            result.append(0);
+        }
+    }
+    return result;
+}
+
+QVector<int> chessboard::index_keypoints(std::vector<cv::KeyPoint> keypoints, QVector<QString> terms)
+{
+    QVector<cv::KeyPoint> keys;
+    for(size_t i = 0; i < keypoints.size(); i++){
+        keys.append(keypoints[i]);
+    }
+    return index_keypoints(keys, terms);
+}
+
+int chessboard::term_frequency(QString term, QVector<int> document, QVector<QString> terms)
+{
+    return term_frequency(terms.indexOf(term), document);
+}
+
+int chessboard::term_frequency(int term_index, QVector<int> document)
+{
+    return document.at(term_index);
+}
+
+int chessboard::document_frequency(QString term, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms)
+{
+    return document_frequency(terms.indexOf(term), documents);
+}
+
+int chessboard::document_frequency(int term_index, QVector<QPair<char, QVector<int>>> documents)
+{
+    int document_f = 0;
+    for(QPair<char, QVector<int>> v : documents){
+        if(v.second.at(term_index) == 1){
+            document_f++;
+        }
+    }
+    return document_f;
+}
+
+float chessboard::inverse_document_frequency(QString term, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms)
+{
+    return inverse_document_frequency(terms.indexOf(term), documents);
+}
+
+float chessboard::inverse_document_frequency(int term_index, QVector<QPair<char, QVector<int>>> documents)
+{
+    return (qLn((1.0 * documents.size()) / document_frequency(term_index, documents)))/(qLn(MEDIA_SEARCH_LOG_BASE));
+}
+
+float chessboard::tf_idf(QString term, int document_index, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms)
+{
+    return tf_idf(terms.indexOf(term), document_index, documents);
+}
+
+float chessboard::tf_idf(int term_index, int document_index, QVector<QPair<char, QVector<int>>> documents)
+{
+    return tf_idf(term_index, documents.at(document_index).second, documents);
+}
+
+float chessboard::tf_idf(QString term, QVector<int> q, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms)
+{
+    return tf_idf(terms.indexOf(term), q, documents);
+}
+
+float chessboard::tf_idf(int term_index, QVector<int> q, QVector<QPair<char, QVector<int>>> documents)
+{
+    return term_frequency(term_index, q) * inverse_document_frequency(term_index, documents);
+}
+
+float chessboard::simularities(QVector<float> a, QVector<float> b)
+{
+    float denominator = 0;
+    float lengthA = 0;
+    float lengthB = 0;
+    for (int i = 0; i < qMin(a.length(), b.length()); i++) {
+        lengthA += qPow(a[i], 2);
+        lengthB += qPow(b[i], 2);
+        denominator += a[i] * b[i];
+    }
+    lengthA = qSqrt(lengthA);
+    lengthB = qSqrt(lengthB);
+    return (denominator) / (lengthA * lengthB);
+}
+
+QVector<QPair<char, float>> chessboard::score(QVector<int> q, QVector<QPair<char, QVector<int>>> documents, QVector<QString> terms)
+{
+    QVector<float> qf;
+    for(QString term : terms){
+        qf.push_back(tf_idf(term, q, documents, terms));
+    }
+    QVector<QPair<char, float>> score_list;
+    QVector<QPair<char, QVector<float>>> tf_idf_document_values;
+    for(QPair<char, QVector<int>> document : documents){
+        QVector<float> tf_idf_document;
+        for(QString term : terms){
+            tf_idf_document.push_back(tf_idf(term, documents.indexOf(document), documents, terms));
+        }
+        tf_idf_document_values.push_back(QPair<char, QVector<float>>(document.first, tf_idf_document));
+        score_list.append(QPair<char, float>(document.first, simularities(qf, tf_idf_document)));
+    }
+    return score_list;;
 }
 
 QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>> chessboard::get_features(cv::Mat reference_descriptors, std::vector<cv::KeyPoint> reference_keypoints, cv::Mat real_image)
@@ -179,12 +316,12 @@ QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>> chessboard::get_featur
     cv::Mat real_descriptors;
     cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
     cv::Ptr<cv::DescriptorExtractor> descriptor = cv::ORB::create();
-
     cv::Ptr<cv::DescriptorMatcher> matcher  = cv::DescriptorMatcher::create ( "BruteForce-Hamming" );
-    detector->detect(real_image,real_keypoints );
+
+    detector->detect(real_image, real_keypoints);
     descriptor->compute(real_image, real_keypoints, real_descriptors);
     std::vector<cv::DMatch> matches;
-    matcher->match(reference_descriptors, real_descriptors, matches );
+    matcher->match(reference_descriptors, real_descriptors, matches);
     double min_dist = 10000, max_dist = 0;
     for (int i = 0; i < reference_descriptors.rows; i++)
     {
@@ -200,49 +337,30 @@ QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>> chessboard::get_featur
             good_matches.push_back(matches[i]);
         }
     }
-
-    /*
-    cv::Mat img_match;
-    cv::Mat img_goodmatch;
-    drawMatches (reference, keypoints_1, real_image, keypoints_2, matches, img_match );
-    drawMatches (reference, keypoints_1, real_image, keypoints_2, good_matches, img_goodmatch );
-    imshow ( "所有匹配点对", img_match );
-    imshow ( "优化后匹配点对", img_goodmatch );
-    cv::waitKey(10);
-    cv::waitKey(10);
-    cv::waitKey(10);
-    cv::waitKey(10);
-    */
     return QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>>(real_keypoints, good_matches);
 }
 
 void chessboard::detect_simularities(cv::Mat *reference_descriptors, std::vector<cv::KeyPoint> *reference_keypoints, cv::Mat real_image)
 {
-    qDebug() << "Detect Simularities";
-    QVector<QVector<QString>> current_word_container;
-    QVector<QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>>> result_container;
+    QVector<QPair<char, float>> scores;
     for(int i =  0; i < 8; i++){
-        qDebug() << "i: " << i;
-        qDebug() << "KeyPoint i " << &reference_keypoints[i];
-        qDebug() << "Descriptor i " << &reference_descriptors[i];
         QPair<std::vector<cv::KeyPoint>, std::vector<cv::DMatch>> result = get_features(reference_descriptors[i], reference_keypoints[i], real_image);
-        qDebug() << "Got feature";
-        QVector<QString> word;
+        QVector<cv::KeyPoint> word;
         QHash<int, int> map;
-        qDebug() << "Hashmap " << &map;
         for(size_t j = 0; j < result.second.size(); j++){
             cv::DMatch match = result.second.at(j);
             map.insert(match.queryIdx, match.trainIdx);
         }
-        qDebug() << "Hashmap Populated ";
         for(size_t j = 0; j < result.first.size(); j++){
-            qDebug() << "Keypoints " << &reference_keypoints[i];
-            qDebug() << "Keypoints size " << reference_keypoints[i].size();
-            qDebug() << "Maps to value " << map.value(j);
-            cv::KeyPoint kp = reference_keypoints[i][map.value(j)];
-            word.append(KeyPoint2QString(kp));
+            word.append(reference_keypoints[i][map.value(j)]);
         }
-
+        scores.append(score(index_keypoints(word, letterterms), letter_vectors, letterterms));
+        //vector_map.append(QPair<char, QVector<int>>(i, index_keypoints(word)));
+    }
+    for(QPair<char, float> pair : scores){
+        if(pair.second != 0){
+            qDebug() << "Score " << pair.first << " " << pair.second;
+        }
     }
     qDebug() << "Simularities Done";
 }
@@ -263,9 +381,6 @@ void chessboard::bla_wrapper(cv::Mat image)
                             qvec2d2cv_point2f(get_corner_by_indizes(x, y) + bottom_distance),
                             qvec2d2cv_point2f(get_corner_by_indizes(x, y + 1)),
                             qvec2d2cv_point2f(get_corner_by_indizes(x, y)), aOiSize), aOiSize);
-    for(int i = 0; i < 16; i++){
-        qDebug() << "i " << i << " Descriptor " << &descriptors[i] << " Keypoint " << &keypoints[i] << " " << keypoints[i].size();
-    }
     bool letter_detect = true;
     if(letter_detect){
         detect_simularities(descriptors, keypoints, imageMarker);
@@ -882,9 +997,12 @@ chessboard::chessboard(const chessboard &board)
     this->min_y = board.min_y;
     this->max_y = board.max_y;
     this->origin_index = board.origin_index;
-    this->terms.append(board.terms);
+    this->letterterms.append(board.letterterms);
+    this->numberterms.append(board.numberterms);
     for(int i = 0; i < 16; i++){
         this->keypoints[i] = board.keypoints[i];
-        this->descriptors[i] = board.descriptors[i];
+        this->descriptors[i] = board.descriptors[i].clone();
     }
+    this->letter_vectors.append(board.letter_vectors);
+    this->number_vectors.append(board.number_vectors);
 }
