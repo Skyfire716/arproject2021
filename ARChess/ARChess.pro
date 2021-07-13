@@ -1,8 +1,8 @@
-QT       += core gui multimedia multimediawidgets
+QT       += core gui multimedia multimediawidgets 3dcore 3drender 3dinput 3dlogic 3dextras 3danimation
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++11 resources_big
 
 
 # You can make your code fail to compile if it uses deprecated APIs.
@@ -10,19 +10,27 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    archesswidget.cpp \
     camera_controller.cpp \
+    camera_worker.cpp \
+    chessboard.cpp \
+    chessboard_controller.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    archesswidget.h \
     camera_controller.h \
+    camera_worker.h \
+    chessboard.h \
+    chessboard_controller.h \
     mainwindow.h
 
 FORMS += \
     mainwindow.ui
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    QT += androidextras
+    QT       += core gui multimedia multimediawidgets 3dcore 3drender 3dinput 3dlogic 3dextras 3danimation androidextras
     ANDROID_EXTRA_LIBS = \
         $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_core.so \
         $$PWD/3rdparty/install/lib/armeabi-v7a/libopencv_imgproc.so \
@@ -80,4 +88,8 @@ DISTFILES += \
     org.arproject.archess/gradlew \
     org.arproject.archess/gradlew.bat \
     org.arproject.archess/res/values/libs.xml
+
+RESOURCES += \
+    qtresourcemanager.qrc
+
 

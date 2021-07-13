@@ -6,30 +6,33 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1044</width>
-    <height>623</height>
+    <width>680</width>
+    <height>480</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="3" column="2">
-     <widget class="QOpenGLWidget" name="openGLWidget3D"/>
-    </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="image_label">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="baseSize">
+    <item row="5" column="0">
+     <widget class="QLabel" name="y_value">
+      <property name="minimumSize">
        <size>
-        <width>2000</width>
-        <height>1000</height>
+        <width>662</width>
+        <height>0</height>
        </size>
       </property>
       <property name="text">
@@ -37,17 +40,32 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QPushButton" name="pushButton">
-      <property name="text">
-       <string>Redetect Cameras</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
+    <item row="0" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetDefaultConstraint</enum>
+      </property>
+      <item>
+       <widget class="QPushButton" name="pushButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Redetect Cameras</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="QLabel" name="openvc_version_label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>OpenCV not found!</string>
         </property>
@@ -56,7 +74,7 @@
       <item>
        <widget class="QComboBox" name="camera_combbox">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -67,30 +85,134 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="threshold_method_ui"/>
+       <widget class="QSlider" name="threshold_slider_id">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimum">
+         <number>0</number>
+        </property>
+        <property name="maximum">
+         <number>255</number>
+        </property>
+        <property name="value">
+         <number>120</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="threshold_value_label_ui">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="result_image_box"/>
+      </item>
+      <item>
+       <widget class="QComboBox" name="threshold_method_ui">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
     <item row="2" column="0">
-     <widget class="QSlider" name="threshold_slider_id">
-      <property name="minimum">
+     <widget class="QLabel" name="position_x">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Position X:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="26" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="topMargin">
        <number>0</number>
       </property>
-      <property name="maximum">
-       <number>255</number>
+      <item>
+       <widget class="archesswidget" name="widget3d" native="true">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="baseSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="4" column="0">
+     <widget class="QLabel" name="position_y">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
-      <property name="value">
-       <number>120</number>
+      <property name="minimumSize">
+       <size>
+        <width>662</width>
+        <height>0</height>
+       </size>
       </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+      <property name="text">
+       <string>Position Y:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="x_value">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="text">
+       <string>TextLabel</string>
       </property>
      </widget>
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>archesswidget</class>
+   <extends>QWidget</extends>
+   <header location="global">archesswidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

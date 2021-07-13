@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/videos"/>
+    <qresource prefix="/images">
+        <file>resources/images/IMG_20210603_121158.jpg</file>
+    </qresource>
+</RCC>
