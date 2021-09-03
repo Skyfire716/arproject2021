@@ -738,6 +738,7 @@ void camera_worker::run()
                                 cv::circle(camera_image, center_point, 5, cv::Scalar(0, 255, 0), 4, cv::LINE_8);
                                 my_chessboard_controller.optimize_current_board();
                                 my_chessboard_controller.validate_current_board(threshold_image, &check_color_wrapper);
+                                my_chessboard_controller.get_current_board().bla_wrapper(threshold_image);
                                 my_chessboard_controller.get_current_board().drawBoard(camera_image);
                                 QPair<QQuaternion, QVector3D> trans = my_chessboard_controller.get_transform();
                                 QQuaternion q = trans.first;
